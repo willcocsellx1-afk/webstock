@@ -24,6 +24,9 @@ export const Navbar = () => (
         <a data-testid="nav-link-howto" href="#cara-kerja" className="hover:text-neon transition-colors duration-200">
           Cara Kerja
         </a>
+        <a data-testid="nav-link-testimonials" href="#testimoni" className="hover:text-neon transition-colors duration-200">
+          Testimoni
+        </a>
         <a data-testid="nav-link-contact" href="#kontak" className="hover:text-neon transition-colors duration-200">
           Kontak
         </a>

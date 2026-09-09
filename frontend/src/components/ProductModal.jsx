@@ -11,14 +11,16 @@ export const ProductModal = ({ product, onClose }) => {
 
   useEffect(() => {
     setLoading(false);
-    setMethod("stripe");
-    api.get("/payments/methods").then((r) => setMethods(r.data)).catch(() => {});
+    api.get("/payments/methods").then((r) => {
+      setMethods(r.data);
+      setMethod(r.data[0]?.id || "stripe");
+    }).catch(() => {});
   }, [product]);
 
   const handleBuy = async () => {
     setLoading(true);
     try {
-      const endpoint = method === "xendit" ? "/payments/xendit/checkout" : "/payments/checkout";
+      const endpoint = method === "midtrans" ? "/payments/midtrans/checkout" : "/payments/checkout";
       const { data } = await api.post(endpoint, {
         product_id: product.id,
         origin_url: window.location.origin,
@@ -123,7 +125,7 @@ export const ProductModal = ({ product, onClose }) => {
                 </a>
                 <p className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-slate-500">
                   <ShieldCheck size={12} className="text-lime" />
-                  Pembayaran aman via Stripe &bull; Garansi uang kembali
+                  Pembayaran aman via Midtrans &amp; Stripe &bull; Garansi uang kembali
                 </p>
               </div>
             </div>

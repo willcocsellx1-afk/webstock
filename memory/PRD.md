@@ -33,22 +33,25 @@
 - Footer + tombol WhatsApp CS ke nomor asli 6285693161480
 - Kunci admin diganti menjadi `Musangpandan`
 - Upload foto produk dari komputer via object storage Emergent (maks 5MB, JPG/PNG/WEBP/GIF), gambar disajikan lewat `/api/files/...`, opsi tempel URL tetap ada
-- Integrasi Xendit (QRIS/VA/GoPay/OVO/DANA) SIAP PAKAI di kode: `POST /api/payments/xendit/checkout`, `POST /api/webhook/xendit`, `GET /api/payments/methods`. Pilihan metode bayar di modal otomatis muncul setelah `XENDIT_SECRET_KEY` & `XENDIT_WEBHOOK_TOKEN` diisi di backend/.env + restart backend. Belum aktif — menunggu kunci dari user
+
+## Yang Sudah Diimplementasikan (Sesi 2 — Jun 2026)
+- **Midtrans AKTIF (mode PRODUCTION, key asli user, Merchant ID G785573532)** — menggantikan Xendit. `POST /api/payments/midtrans/checkout` → Snap redirect (`app.midtrans.com`), `POST /api/webhook/midtrans` (verifikasi SHA512 signature_key + cek jumlah, idempotent), fallback cek status via `api.midtrans.com/v2/{order}/status` saat polling `/api/payments/status`. Auto-deteksi sandbox jika key berawalan `SB-`. Metode "QRIS / VA / E-Wallet" tampil default di modal, Stripe tetap ada.
+  - **PENTING**: set Payment Notification URL di dashboard Midtrans → `https://<domain>/api/webhook/midtrans`
+- Testimoni pembeli: koleksi `testimonials`, `GET /api/testimonials`, admin `POST/DELETE /api/admin/testimonials` (nama, game, produk, rating 1-5, ulasan, screenshot chat via upload). Seksi "Bukti Sosial" di beranda (`#testimoni`) + zoom screenshot, link di Navbar/Footer. Tab "Testimoni" di panel admin.
+- Kolom "Metode" (provider · payment_type) di tabel pesanan admin. Copy Stripe → Midtrans & Stripe di footer/how-it-works/modal.
+- Tambah/hapus produk di admin diverifikasi ulang (testing agent, iteration_1 lulus semua).
 
 ## Kredensial
 - Admin Key: `Musangpandan` (lihat /app/memory/test_credentials.md)
 - Stripe test card: 4242 4242 4242 4242
-- Xendit: MENUNGGU Secret API Key + Webhook Token (mode test) dari user
+- Midtrans: PRODUCTION keys di backend/.env (MIDTRANS_SERVER_KEY / MIDTRANS_CLIENT_KEY / MIDTRANS_MERCHANT_ID)
 
 ## Backlog Prioritas
-- P0: Gateway pembayaran lokal (Midtrans/Xendit — QRIS, VA, e-wallet) — menunggu API key user
-- P0: Ganti nomor WhatsApp placeholder dengan nomor asli
-- P1: Notifikasi pesanan ke WhatsApp/email pemilik saat pembayaran sukses
-- P1: Upload gambar produk dari admin (object storage) alih-alih URL
-- P2: Halaman testimoni pembeli, badge "Trusted Seller", statistik real
+- P1: Notifikasi pesanan ke WhatsApp/email pemilik saat pembayaran sukses (user pernah skip)
+- P1: Edit testimoni (saat ini hanya tambah/hapus)
+- P2: Badge "Trusted Seller", statistik real
 - P2: Mode gelap/terang toggle, PWA
 
 ## Tugas Berikutnya
-1. Minta API key Midtrans/Xendit dari user, integrasikan QRIS/VA
-2. Konfirmasi nomor WhatsApp asli pemilik
-3. Klaim/setup akun Stripe live sebelum deploy produksi (saat ini sandbox test)
+1. User set Notification URL Midtrans di dashboard → `/api/webhook/midtrans`
+2. Klaim/setup akun Stripe live sebelum deploy produksi (saat ini sandbox test)

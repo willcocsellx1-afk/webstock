@@ -12,7 +12,7 @@ const STEPS = [
     num: "02",
     icon: CreditCard,
     title: "Bayar Instant",
-    desc: "Lakukan pembayaran aman via Stripe. Proses otomatis, terenkripsi, dan terverifikasi real-time.",
+    desc: "Bayar via QRIS, Virtual Account, GoPay/OVO/DANA, atau kartu. Proses otomatis, terenkripsi, terverifikasi real-time.",
   },
   {
     num: "03",

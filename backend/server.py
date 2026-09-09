@@ -12,6 +12,9 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
 import requests
 import uuid
+import base64
+import hashlib
+import hmac
 
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
@@ -27,8 +30,8 @@ api_router = APIRouter(prefix="/api")
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', 'NEXUS-ADMIN-8888')
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
-XENDIT_SECRET_KEY = os.environ.get('XENDIT_SECRET_KEY', '')
-XENDIT_WEBHOOK_TOKEN = os.environ.get('XENDIT_WEBHOOK_TOKEN', '')
+MIDTRANS_SERVER_KEY = os.environ.get('MIDTRANS_SERVER_KEY', '')
+MIDTRANS_BASE = "https://app.sandbox.midtrans.com" if MIDTRANS_SERVER_KEY.startswith("SB-") else "https://app.midtrans.com"
 
 STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
 STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
@@ -101,6 +104,14 @@ SEED_PRODUCTS = [
 ]
 
 
+SEED_TESTIMONIALS = [
+    {"id": "t-rizky", "name": "Rizky A.", "game": "Mobile Legends", "product": "Akun Sultan Mythic Glory", "rating": 5, "image": "", "created_at": iso(3), "text": "Akun sesuai deskripsi, skin lengkap semua. Proses 10 menit langsung dikirim data login + email. Recommended banget!"},
+    {"id": "t-dinda", "name": "Dinda P.", "game": "Genshin Impact", "product": "Jasa Joki Spiral Abyss", "rating": 5, "image": "", "created_at": iso(6), "text": "Abyss 36 bintang kelar dalam sehari, resin gak disentuh sama sekali. Adminnya ramah, fast respon di WA."},
+    {"id": "t-fajar", "name": "Fajar N.", "game": "Valorant", "product": "Jasa Joki ke Radiant", "rating": 5, "image": "", "created_at": iso(9), "text": "Awalnya ragu, ternyata legit. Diamond ke Radiant 5 hari, update progres tiap malam. Aman tanpa smurf detect."},
+    {"id": "t-ayu", "name": "Ayu S.", "game": "Free Fire", "product": "Top Up 2180 Diamond", "rating": 4, "image": "", "created_at": iso(12), "text": "Diamond masuk 3 menit setelah bayar QRIS. Harganya paling murah dibanding tempat lain. Bakal langganan."},
+]
+
+
 class ProductIn(BaseModel):
     game: str
     category: str
@@ -119,6 +130,15 @@ class ProductIn(BaseModel):
 class CheckoutIn(BaseModel):
     product_id: str
     origin_url: str
+
+
+class TestimonialIn(BaseModel):
+    name: str
+    game: str = ""
+    product: str = ""
+    rating: int = 5
+    text: str
+    image: str = ""
 
 
 async def require_admin(x_admin_key: Optional[str] = Header(None)):
@@ -245,7 +265,10 @@ async def payment_status(session_id: str):
     record = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if not record:
         raise HTTPException(404, "Transaksi tidak ditemukan")
-    if record.get("payment_status") != "paid" and record.get("provider") != "xendit":
+    if record.get("payment_status") != "paid" and record.get("provider") == "midtrans":
+        await sync_midtrans_status(session_id)
+        record = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    elif record.get("payment_status") != "paid" and not record.get("provider"):
         try:
             stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
             status = await stripe_checkout.get_checkout_status(session_id)
@@ -322,16 +345,57 @@ async def serve_file(path: str):
 
 @api_router.get("/payments/methods")
 async def payment_methods():
-    methods = [{"id": "stripe", "label": "Kartu (Stripe)"}]
-    if XENDIT_SECRET_KEY:
-        methods.append({"id": "xendit", "label": "QRIS / VA / E-Wallet"})
+    methods = []
+    if MIDTRANS_SERVER_KEY:
+        methods.append({"id": "midtrans", "label": "QRIS / VA / E-Wallet"})
+    methods.append({"id": "stripe", "label": "Kartu (Stripe)"})
     return methods
 
 
-@api_router.post("/payments/xendit/checkout")
-async def xendit_checkout(req: CheckoutIn):
-    if not XENDIT_SECRET_KEY:
-        raise HTTPException(503, "Pembayaran Xendit (QRIS/VA/E-Wallet) belum diaktifkan")
+def midtrans_headers():
+    token = base64.b64encode(f"{MIDTRANS_SERVER_KEY}:".encode()).decode()
+    return {"Authorization": f"Basic {token}", "Accept": "application/json", "Content-Type": "application/json"}
+
+
+def midtrans_status_map(payload: dict):
+    ts = payload.get("transaction_status")
+    fraud = payload.get("fraud_status")
+    if ts in ("capture", "settlement") and fraud in (None, "accept"):
+        return "paid"
+    if ts == "pending":
+        return "pending"
+    if ts in ("deny", "cancel", "expire", "failure"):
+        return "failed"
+    return None
+
+
+async def apply_midtrans_status(order_id: str, payload: dict):
+    new_status = midtrans_status_map(payload)
+    if new_status == "paid":
+        await mark_paid(order_id)
+    elif new_status == "failed":
+        await db.payment_transactions.update_one(
+            {"session_id": order_id, "payment_status": {"$ne": "paid"}},
+            {"$set": {"status": "failed", "payment_status": "failed", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+    if payload.get("payment_type"):
+        await db.payment_transactions.update_one({"session_id": order_id}, {"$set": {"payment_type": payload["payment_type"]}})
+
+
+async def sync_midtrans_status(order_id: str):
+    try:
+        api_base = MIDTRANS_BASE.replace("app.", "api.")
+        resp = requests.get(f"{api_base}/v2/{order_id}/status", headers=midtrans_headers(), timeout=15)
+        if resp.status_code == 200:
+            await apply_midtrans_status(order_id, resp.json())
+    except Exception as e:
+        logger.warning(f"Midtrans status check failed: {e}")
+
+
+@api_router.post("/payments/midtrans/checkout")
+async def midtrans_checkout(req: CheckoutIn):
+    if not MIDTRANS_SERVER_KEY:
+        raise HTTPException(503, "Pembayaran Midtrans (QRIS/VA/E-Wallet) belum diaktifkan")
     product = await db.products.find_one({"id": req.product_id}, {"_id": 0})
     if not product:
         raise HTTPException(404, "Produk tidak ditemukan")
@@ -340,7 +404,7 @@ async def xendit_checkout(req: CheckoutIn):
     order_id = f"NXG-{uuid.uuid4().hex[:16].upper()}"
     await db.payment_transactions.insert_one({
         "session_id": order_id,
-        "provider": "xendit",
+        "provider": "midtrans",
         "product_id": product["id"],
         "product_title": product["title"],
         "amount": float(product["price"]),
@@ -352,23 +416,19 @@ async def xendit_checkout(req: CheckoutIn):
     })
     try:
         resp = requests.post(
-            "https://api.xendit.co/v2/invoices",
-            auth=(XENDIT_SECRET_KEY, ""),
+            f"{MIDTRANS_BASE}/snap/v1/transactions",
+            headers=midtrans_headers(),
             json={
-                "external_id": order_id,
-                "amount": product["price"],
-                "description": f"NEXUSGAME - {product['title']}",
-                "should_send_email": False,
-                "success_redirect_url": f"{req.origin_url}/payment/success?session_id={order_id}",
-                "failure_redirect_url": f"{req.origin_url}/payment/cancel",
-                "currency": "IDR",
+                "transaction_details": {"order_id": order_id, "gross_amount": int(product["price"])},
+                "item_details": [{"id": product["id"], "price": int(product["price"]), "quantity": 1, "name": product["title"][:50]}],
+                "callbacks": {"finish": f"{req.origin_url}/payment/success?session_id={order_id}", "error": f"{req.origin_url}/payment/cancel"},
             },
             timeout=20,
         )
         resp.raise_for_status()
-        invoice = resp.json()
+        snap = resp.json()
     except Exception as e:
-        logger.error(f"Xendit invoice error: {e}")
+        logger.error(f"Midtrans snap error: {e}")
         await db.payment_transactions.update_one(
             {"session_id": order_id},
             {"$set": {"status": "payment_error", "updated_at": datetime.now(timezone.utc).isoformat()}},
@@ -376,27 +436,50 @@ async def xendit_checkout(req: CheckoutIn):
         raise HTTPException(502, "Penyedia pembayaran tidak tersedia")
     await db.payment_transactions.update_one(
         {"session_id": order_id},
-        {"$set": {"xendit_invoice_id": invoice["id"], "invoice_url": invoice["invoice_url"], "updated_at": datetime.now(timezone.utc).isoformat()}},
+        {"$set": {"snap_token": snap["token"], "invoice_url": snap["redirect_url"], "updated_at": datetime.now(timezone.utc).isoformat()}},
     )
-    return {"checkout_url": invoice["invoice_url"], "session_id": order_id}
+    return {"checkout_url": snap["redirect_url"], "session_id": order_id}
 
 
-@api_router.post("/webhook/xendit")
-async def xendit_webhook(request: Request):
-    token = request.headers.get("x-callback-token", "")
-    if not XENDIT_WEBHOOK_TOKEN or token != XENDIT_WEBHOOK_TOKEN:
-        raise HTTPException(401, "Token webhook tidak valid")
-    event = await request.json()
-    external_id = event.get("external_id")
-    new_status = {"PAID": "paid", "SETTLED": "paid", "EXPIRED": "expired", "FAILED": "failed"}.get((event.get("status") or "").upper())
-    if external_id and new_status == "paid":
-        await mark_paid(external_id)
-    elif external_id and new_status:
-        await db.payment_transactions.update_one(
-            {"session_id": external_id, "payment_status": {"$ne": "paid"}},
-            {"$set": {"status": new_status, "payment_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}},
-        )
-    return {"received": True}
+@api_router.post("/webhook/midtrans")
+async def midtrans_webhook(request: Request):
+    payload = await request.json()
+    raw = f"{payload.get('order_id', '')}{payload.get('status_code', '')}{payload.get('gross_amount', '')}{MIDTRANS_SERVER_KEY}"
+    expected = hashlib.sha512(raw.encode()).hexdigest()
+    if not hmac.compare_digest(expected, str(payload.get("signature_key", ""))):
+        raise HTTPException(403, "Signature tidak valid")
+    order_id = payload.get("order_id")
+    tx = await db.payment_transactions.find_one({"session_id": order_id})
+    if not tx:
+        raise HTTPException(404, "Transaksi tidak ditemukan")
+    if float(payload.get("gross_amount", 0)) != float(tx["amount"]):
+        raise HTTPException(400, "Jumlah tidak cocok")
+    await apply_midtrans_status(order_id, payload)
+    return {"ok": True}
+
+
+@api_router.get("/testimonials")
+async def list_testimonials():
+    return await db.testimonials.find({}, {"_id": 0}).sort("created_at", -1).to_list(200)
+
+
+@api_router.post("/admin/testimonials")
+async def create_testimonial(data: TestimonialIn, admin=Depends(require_admin)):
+    doc = data.model_dump()
+    doc["rating"] = max(1, min(5, doc["rating"]))
+    doc["id"] = str(uuid.uuid4())[:8]
+    doc["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.testimonials.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@api_router.delete("/admin/testimonials/{tid}")
+async def delete_testimonial(tid: str, admin=Depends(require_admin)):
+    res = await db.testimonials.delete_one({"id": tid})
+    if res.deleted_count == 0:
+        raise HTTPException(404, "Testimoni tidak ditemukan")
+    return {"ok": True}
 
 
 @app.on_event("startup")
@@ -409,6 +492,8 @@ async def seed_products():
     if await db.products.count_documents({}) == 0:
         await db.products.insert_many([dict(p) for p in SEED_PRODUCTS])
         logger.info(f"Seeded {len(SEED_PRODUCTS)} products")
+    if await db.testimonials.count_documents({}) == 0:
+        await db.testimonials.insert_many([dict(t) for t in SEED_TESTIMONIALS])
 
 
 app.include_router(api_router)

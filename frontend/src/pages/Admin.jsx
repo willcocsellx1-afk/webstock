@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ShieldCheck, Plus, Pencil, Trash2, RotateCcw, LogOut, X, Loader2, Package, Receipt, ArrowLeft, Upload,
+  ShieldCheck, Plus, Pencil, Trash2, RotateCcw, LogOut, X, Loader2, Package, Receipt, ArrowLeft, Upload, MessageSquareQuote,
 } from "lucide-react";
 import { toast } from "sonner";
 import { api, formatIDR, imgSrc } from "@/lib/api";
+import { AdminTestimonials } from "@/components/AdminTestimonials";
 
 const CATEGORIES = ["Akun Game", "Jasa Joki", "Top Up Diamond"];
 const BADGES = ["", "Verified Seller", "Garansi 100%", "Diskon Hot"];
@@ -22,6 +23,7 @@ export default function Admin() {
   const [keyInput, setKeyInput] = useState("");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [tab, setTab] = useState("produk");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -32,12 +34,14 @@ export default function Admin() {
 
   const load = useCallback(async () => {
     try {
-      const [p, o] = await Promise.all([
+      const [p, o, t] = await Promise.all([
         api.get("/products"),
         api.get("/admin/orders", { headers }),
+        api.get("/testimonials"),
       ]);
       setProducts(p.data);
       setOrders(o.data);
+      setTestimonials(t.data);
     } catch {
       toast.error("Gagal memuat data admin");
     }
@@ -228,6 +232,13 @@ export default function Admin() {
             >
               <Receipt size={13} /> Pesanan ({orders.length})
             </button>
+            <button
+              onClick={() => setTab("testimoni")}
+              data-testid="admin-tab-testimonials"
+              className={`flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest px-4 py-2.5 border transition-colors ${tab === "testimoni" ? "bg-neon text-void border-neon" : "border-line text-slate-400 hover:text-neon"}`}
+            >
+              <MessageSquareQuote size={13} /> Testimoni ({testimonials.length})
+            </button>
           </div>
           {tab === "produk" && (
             <div className="flex gap-2">
@@ -286,6 +297,10 @@ export default function Admin() {
           </div>
         )}
 
+        {tab === "testimoni" && (
+          <AdminTestimonials items={testimonials} headers={headers} reload={load} />
+        )}
+
         {tab === "pesanan" && (
           <div className="border border-line bg-panel overflow-x-auto" data-testid="admin-orders-table">
             {orders.length === 0 ? (
@@ -296,6 +311,7 @@ export default function Admin() {
                   <tr className="border-b border-line text-[10px] uppercase tracking-widest text-slate-500">
                     <th className="px-4 py-3">Sesi</th>
                     <th className="px-4 py-3">Produk</th>
+                    <th className="px-4 py-3">Metode</th>
                     <th className="px-4 py-3">Jumlah</th>
                     <th className="px-4 py-3">Status</th>
                     <th className="px-4 py-3">Waktu</th>
@@ -306,6 +322,7 @@ export default function Admin() {
                     <tr key={o.session_id} className="border-b border-line/60" data-testid={`order-row-${o.session_id.slice(-6)}`}>
                       <td className="px-4 py-3 text-slate-500">...{o.session_id.slice(-10)}</td>
                       <td className="px-4 py-3 text-slate-200 max-w-[240px] truncate">{o.product_title}</td>
+                      <td className="px-4 py-3 text-slate-400 uppercase text-[10px]">{o.provider || "stripe"}{o.payment_type ? ` · ${o.payment_type}` : ""}</td>
                       <td className="px-4 py-3 text-neon font-bold">{formatIDR(o.amount)}</td>
                       <td className="px-4 py-3">
                         <span className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${

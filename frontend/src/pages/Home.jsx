@@ -5,6 +5,7 @@ import { Hero } from "@/components/Hero";
 import { Marquee } from "@/components/Marquee";
 import { Catalog } from "@/components/Catalog";
 import { HowItWorks } from "@/components/HowItWorks";
+import { Testimonials } from "@/components/Testimonials";
 import { Footer } from "@/components/Footer";
 import { ProductModal } from "@/components/ProductModal";
 import { api, waLink } from "@/lib/api";
@@ -34,6 +35,7 @@ export default function Home() {
       <Marquee />
       <Catalog products={products} loading={loading} onSelect={setSelected} />
       <HowItWorks />
+      <Testimonials />
       <Footer />
       <ProductModal product={selected} onClose={() => setSelected(null)} />
 
