@@ -1,0 +1,123 @@
+@import url('https://fonts.googleapis.com/css2?family=Unbounded:wght@400;500;600;700;800;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 225 22% 4%;
+        --foreground: 210 40% 98%;
+        --card: 222 24% 7%;
+        --card-foreground: 210 40% 98%;
+        --popover: 222 24% 7%;
+        --popover-foreground: 210 40% 98%;
+        --primary: 183 100% 50%;
+        --primary-foreground: 225 22% 4%;
+        --secondary: 220 15% 12%;
+        --secondary-foreground: 210 40% 98%;
+        --muted: 220 15% 12%;
+        --muted-foreground: 215 20% 65%;
+        --accent: 220 15% 12%;
+        --accent-foreground: 210 40% 98%;
+        --destructive: 348 100% 58%;
+        --destructive-foreground: 210 40% 98%;
+        --border: 219 23% 16%;
+        --input: 219 23% 16%;
+        --ring: 183 100% 50%;
+        --radius: 0.25rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-[#07080B] text-slate-100;
+        font-family: 'Space Mono', monospace;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+.font-display {
+    font-family: 'Unbounded', sans-serif;
+}
+
+.grid-bg {
+    background-image:
+        linear-gradient(rgba(0, 240, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 240, 255, 0.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+}
+
+.text-stroke {
+    -webkit-text-stroke: 1.5px rgba(0, 240, 255, 0.55);
+    color: transparent;
+}
+
+.glow-cyan {
+    box-shadow: 0 0 24px rgba(0, 240, 255, 0.25), 0 0 64px rgba(0, 240, 255, 0.08);
+}
+
+::selection {
+    background: #00F0FF;
+    color: #07080B;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-track {
+    background: #07080B;
+}
+::-webkit-scrollbar-thumb {
+    background: #1F2633;
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 240, 255, 0.4);
+}
+
+html.lenis, html.lenis body {
+    height: auto;
+}
+.lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}

@@ -1,0 +1,109 @@
+{
+  "project_identity": {
+    "name": "NEXUSGAME ID (Igitem-Inspired Indonesian Gaming Marketplace)",
+    "archetype": "ARCHETYPE 7: ELECTRIC & NEON / TACTICAL CYBER VOID",
+    "theme": "Dark Modern Gaming (Void Black, Neon Cyan #00F0FF, Radiant Coral #FF2A54, Electric Lime #39FF14)",
+    "language": "Indonesian (Bahasa Indonesia)"
+  },
+  "typography": {
+    "heading_font": "Unbounded, Outfit, or Cabinet Grotesk (Display Sans, tracking-tight, font-black or font-bold)",
+    "body_font": "Space Mono, JetBrains Mono, or IBM Plex Sans (Monospace & Technical Sans for specs, prices, and metrics)",
+    "hierarchy": {
+      "h1_hero": "text-4xl sm:text-5xl lg:text-6xl font-black tracking-tighter uppercase leading-none",
+      "h2_section": "text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight uppercase",
+      "h3_card": "text-lg sm:text-xl font-bold tracking-normal",
+      "body": "text-sm sm:text-base leading-relaxed text-slate-300",
+      "caption_mono": "text-xs font-mono uppercase tracking-widest text-cyan-400/90"
+    }
+  },
+  "colors": {
+    "background_void": "#07080B",
+    "background_card": "#0E1117",
+    "background_card_hover": "#151924",
+    "surface_glass": "rgba(14, 17, 23, 0.8)",
+    "border_subtle": "#1F2633",
+    "border_glow": "rgba(0, 240, 255, 0.3)",
+    "accent_cyan": "#00F0FF",
+    "accent_coral": "#FF2A54",
+    "accent_lime": "#39FF14",
+    "text_primary": "#F8FAFC",
+    "text_secondary": "#94A3B8",
+    "forbidden_colors": ["#7351B7", "#1B93A4"]
+  },
+  "layout_and_spacing": {
+    "container_max_width": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "spacing_philosophy": "Generous tactical spacing (py-16 sm:py-24, gap-6 to gap-8). High density grid for catalog (grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4).",
+    "hero_layout": "Asymmetric Split Hero: Left kinetic animated title reveal + CTA buttons + Live Metrics ticker; Right glowing 3D-styled featured product card frame with neon spotlight bleed.",
+    "catalog_grid": "Grid items direct children of container or motion.div direct wrappers with subgrid/grid-item classes."
+  },
+  "component_guidelines": {
+    "navbar": {
+      "style": "Fixed floating navbar, backdrop-blur-xl bg-[#07080B]/80 border-b border-[#1F2633] z-50",
+      "elements": "Logo with glowing icon, Search Bar trigger, Category Quick Links (Akun, Joki, Top Up), Admin Panel Toggle button with PIN lock, WhatsApp Live CS button",
+      "desktop_visibility": "Nav links visible directly on desktop screen, hamburger menu reserved for mobile viewport (<768px)"
+    },
+    "kinetic_hero": {
+      "effect": "Line-by-line staggered text mask reveal using framer-motion opacity & y-axis motion on mount. Ambient tactical grid lines background canvas/SVG.",
+      "eyebrow": "ONLINE GAMING MARKETPLACE INDONESIA • 100% GARANSI AMAN",
+      "main_title": "BELI AKUN GAME & JASA JOKI INSTANT.",
+      "subtitle": "Marketplace game terpercaya mirip Igitem. Dapatkan akun Sultan Mobile Legends, PUBG, Genshin Impact & Jasa Joki Rank Fast-Track."
+    },
+    "marquee": {
+      "style": "Editorial slow-drift ribbon with low-contrast neon text (#00F0FF) on dark obsidian background (#0A0D14) with subtle top/bottom 1px border",
+      "content": "• 100% GARANSI AKUN AMAN • JOKI PRO PLAYER FAST RANK • TOP UP OTOMATIS 24/7 • PROSES HANYA 5-15 MENIT • CHAT CS WHATSAPP RESPONSIVE •"
+    },
+    "game_catalog": {
+      "filters": {
+        "games": ["Semua Game", "Mobile Legends", "PUBG Mobile", "Genshin Impact", "Valorant", "Free Fire", "Honkai Star Rail"],
+        "categories": ["Semua Kategori", "Akun Game", "Jasa Joki", "Top Up Diamond"],
+        "sorting": ["Termurah", "Termahal", "Paling Populer", "Terbaru"],
+        "badges": ["Semua", "Verified Seller", "Garansi 100%", "Diskon Hot"]
+      },
+      "card_design": "Dark card with 1px border (#1F2633), subtle hover highlight (-translate-y-1 + glow border #00F0FF), image frame with rank/type tag over top-left, game icon badge, price in IDR format (e.g. Rp 450.000), 'Detail & Beli' button."
+    },
+    "product_detail_modal": {
+      "features": "Full screen dialog / overlay with backdrop blur. Shows screenshot gallery, verified rank badge, seller notes, account level, skins count, instant buy CTA button, and direct WhatsApp seller inquiry button.",
+      "checkout_flow": "Modal popup with simulated Stripe payment card form / QRIS payment preview, instant instant order receipt preview."
+    },
+    "admin_crud_panel": {
+      "auth": "PIN key modal protection (Default PIN: 8888 or ADMIN123).",
+      "functionality": "Create new listing (Game title, Category, Title, Price, Description, Rank, Image URL, Stock, Badge), Edit existing products, Delete products, Toggle availability status, Reset demo dataset.",
+      "ui_style": "High-density admin table / grid with quick action icons, searchable table, badge statuses."
+    },
+    "how_it_works": {
+      "style": "Numbered manifesto chapters (01, 02, 03) with tactical cyber outline boxes and glowing step indicators.",
+      "steps": [
+        {"num": "01", "title": "Pilih Akun / Jasa", "desc": "Cari produk game impianmu atau pilih paket jasa joki rank sesuai kebutuhan."},
+        {"num": "02", "title": "Bayar Instant", "desc": "Lakukan pembayaran aman via Stripe / QRIS / Transfer dengan proses otomatis."},
+        {"num": "03", "title": "Terima & Garansi", "desc": "Data akun atau proses joki langsung dikirim. Dilengkapi garansi 100% aman."}
+      ]
+    },
+    "footer": {
+      "style": "Massive typography branding footer with high contrast dark background, WhatsApp live chat widget button, security guarantee badges, and quick links."
+    }
+  },
+  "image_urls": {
+    "hero_setup": "https://images.unsplash.com/photo-1616588589676-62b3bd4ff6d2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NDQ2MzR8MHwxfHNlYXJjaHwyfHxnYW1pbmclMjBzZXR1cHxlbnwwfHx8fDE3ODg5ODQ5NDJ8MA&ixlib=rb-4.1.0&q=85",
+    "esports_arena": "https://images.unsplash.com/photo-1534423861386-85a16f5d13fd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NDQ2Mzl8MHwxfHNlYXJjaHwxfHxlc3BvcnRzJTIwYXJlbmF8ZW58MHx8fHwxNzg4OTg0OTQyfDA&ixlib=rb-4.1.0&q=85",
+    "controller_neon": "https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxnYW1lJTIwY29udHJvbGxlcnxlbnwwfHx8fDE3ODg5ODQ5NDJ8MA&ixlib=rb-4.1.0&q=85",
+    "gaming_room": "https://images.pexels.com/photos/9072216/pexels-photo-9072216.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "cyber_city": "https://images.unsplash.com/photo-1653142267767-a66c7cf17bc1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwzfHxlc3BvcnRzJTIwZ2FtaW5nJTIwd2FsbHBhcGVyJTIwbmVvbiUyMGN5YmVycHVua3xlbnwwfHx8fDE3ODg5ODQ5MzJ8MA&ixlib=rb-4.1.0&q=85"
+  },
+  "instructions_to_main_agent": [
+    "Ensure all text is in natural Indonesian appropriate for a gaming marketplace (e.g., Igitem style).",
+    "Implement Lenis smooth scrolling or standard smooth momentum scrolling.",
+    "Use framer-motion for kinetic hero line-by-line masked reveals and product card hover animations.",
+    "Ensure header has background (backdrop-blur-xl bg-[#07080B]/80) to prevent text overlap.",
+    "Make sure every interactive element (button, input, select, card, modal action) has a clear kebab-case data-testid attribute.",
+    "Do NOT use forbidden colors #7351B7 or #1B93A4 anywhere in Tailwind or custom CSS.",
+    "Add toast notifications using Sonner when adding items, performing checkout, or updating products in Admin mode.",
+    "Keep standard JS/React component architecture (no TypeScript syntax errors)."
+  ],
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
+    "Dark colors look best when grounded with crisp 1px borders and targeted neon accent pops.",
+    "Do not apply universal transition: all (specify transition: transform 0.2s ease, opacity 0.2s ease).",
+    "Never center align the App root container text-align.",
+    "All interactive components MUST include data-testid attribute.",
+    "No plain transparent dropdowns or header backgrounds."
+  ]
+}
