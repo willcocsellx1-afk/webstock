@@ -2,10 +2,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
-  ShieldCheck, Plus, Pencil, Trash2, RotateCcw, LogOut, X, Loader2, Package, Receipt, ArrowLeft,
+  ShieldCheck, Plus, Pencil, Trash2, RotateCcw, LogOut, X, Loader2, Package, Receipt, ArrowLeft, Upload,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, formatIDR } from "@/lib/api";
+import { api, formatIDR, imgSrc } from "@/lib/api";
 
 const CATEGORIES = ["Akun Game", "Jasa Joki", "Top Up Diamond"];
 const BADGES = ["", "Verified Seller", "Garansi 100%", "Diskon Hot"];
@@ -26,6 +26,7 @@ export default function Admin() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const headers = { "x-admin-key": key };
 
@@ -119,6 +120,24 @@ export default function Admin() {
       load();
     } catch {
       toast.error("Gagal menghapus produk");
+    }
+  };
+
+  const uploadImage = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", f);
+      const { data } = await api.post("/admin/upload", fd, { headers });
+      setForm((prev) => ({ ...prev, image: data.url }));
+      toast.success("Gambar berhasil diupload");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Gagal mengupload gambar");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -241,7 +260,7 @@ export default function Admin() {
                   <tr key={p.id} className="border-b border-line/60 hover:bg-panelhover transition-colors" data-testid={`admin-row-${p.id}`}>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
-                        <img src={p.image} alt="" className="w-11 h-11 object-cover border border-line" />
+                        <img src={imgSrc(p.image)} alt="" className="w-11 h-11 object-cover border border-line" />
                         <span className="font-sans font-bold text-slate-200 max-w-[220px] truncate">{p.title}</span>
                       </div>
                     </td>
@@ -354,11 +373,23 @@ export default function Admin() {
                 <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} data-testid="form-stock-input"
                   className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 transition-colors" />
               </label>
-              <label className="block sm:col-span-2">
-                <span className="text-[10px] uppercase tracking-widest text-slate-500">URL Gambar</span>
-                <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://..." data-testid="form-image-input"
-                  className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
-              </label>
+              <div className="sm:col-span-2">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">Gambar Produk</span>
+                <div className="mt-1.5 flex items-start gap-3">
+                  {form.image && (
+                    <img src={imgSrc(form.image)} alt="preview" data-testid="form-image-preview" className="w-20 h-20 object-cover border border-line" />
+                  )}
+                  <div className="flex-1 space-y-2">
+                    <label data-testid="form-image-upload-label" className={`flex items-center justify-center gap-2 border border-dashed border-line hover:border-neon/60 text-slate-400 hover:text-neon text-[11px] font-bold uppercase tracking-widest py-3 cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                      {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
+                      {uploading ? "Mengupload..." : "Upload dari Komputer"}
+                      <input type="file" accept="image/*" onChange={uploadImage} data-testid="form-image-file-input" className="hidden" />
+                    </label>
+                    <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="atau tempel URL gambar https://..." data-testid="form-image-input"
+                      className="w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
+                  </div>
+                </div>
+              </div>
               <label className="block">
                 <span className="text-[10px] uppercase tracking-widest text-slate-500">Badge</span>
                 <select value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })} data-testid="form-badge-select"

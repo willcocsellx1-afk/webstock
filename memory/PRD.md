@@ -30,11 +30,15 @@
 - Modal detail produk + Beli Sekarang → Stripe Checkout (IDR), terverifikasi end-to-end
 - Halaman sukses (polling status) & batal pembayaran
 - Panel admin `/admin`: tambah/edit/hapus produk, reset data contoh, tabel pesanan
-- Footer + tombol WhatsApp CS (nomor placeholder 6281234567890 — MASIH PLACEHOLDER)
+- Footer + tombol WhatsApp CS ke nomor asli 6285693161480
+- Kunci admin diganti menjadi `Musangpandan`
+- Upload foto produk dari komputer via object storage Emergent (maks 5MB, JPG/PNG/WEBP/GIF), gambar disajikan lewat `/api/files/...`, opsi tempel URL tetap ada
+- Integrasi Xendit (QRIS/VA/GoPay/OVO/DANA) SIAP PAKAI di kode: `POST /api/payments/xendit/checkout`, `POST /api/webhook/xendit`, `GET /api/payments/methods`. Pilihan metode bayar di modal otomatis muncul setelah `XENDIT_SECRET_KEY` & `XENDIT_WEBHOOK_TOKEN` diisi di backend/.env + restart backend. Belum aktif — menunggu kunci dari user
 
 ## Kredensial
-- Admin Key: `NEXUS-ADMIN-8888` (lihat /app/memory/test_credentials.md)
+- Admin Key: `Musangpandan` (lihat /app/memory/test_credentials.md)
 - Stripe test card: 4242 4242 4242 4242
+- Xendit: MENUNGGU Secret API Key + Webhook Token (mode test) dari user
 
 ## Backlog Prioritas
 - P0: Gateway pembayaran lokal (Midtrans/Xendit — QRIS, VA, e-wallet) — menunggu API key user

@@ -11,7 +11,12 @@ export const formatIDR = (n) =>
     maximumFractionDigits: 0,
   }).format(n || 0);
 
-export const WA_NUMBER = "6281234567890";
+export const WA_NUMBER = "6285693161480";
 
 export const waLink = (text) =>
   `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;
+
+export const imgSrc = (url) => {
+  if (!url) return "";
+  return url.startsWith("http") ? url : `${process.env.REACT_APP_BACKEND_URL}${url}`;
+};

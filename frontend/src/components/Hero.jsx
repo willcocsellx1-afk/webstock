@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { ArrowDown, MessageCircle, ShieldCheck, Timer, BadgeCheck } from "lucide-react";
-import { formatIDR, waLink } from "@/lib/api";
+import { formatIDR, waLink, imgSrc } from "@/lib/api";
 
 const LINES = [
   { text: "BELI AKUN GAME", cls: "text-slate-100" },
@@ -136,7 +136,7 @@ export const Hero = ({ featured }) => {
             <div className="relative bg-panel border border-line glow-cyan">
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img
-                  src={featured?.image}
+                  src={imgSrc(featured?.image)}
                   alt={featured?.title || "Produk unggulan"}
                   className="w-full h-full object-cover"
                 />

@@ -4,11 +4,14 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from typing import Optional
 
-from fastapi import FastAPI, APIRouter, HTTPException, Request, Header, Depends
+from fastapi import FastAPI, APIRouter, HTTPException, Request, Header, Depends, UploadFile, File
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pydantic import BaseModel
+import requests
+import uuid
 
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
@@ -24,8 +27,46 @@ api_router = APIRouter(prefix="/api")
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', 'NEXUS-ADMIN-8888')
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
+XENDIT_SECRET_KEY = os.environ.get('XENDIT_SECRET_KEY', '')
+XENDIT_WEBHOOK_TOKEN = os.environ.get('XENDIT_WEBHOOK_TOKEN', '')
+
+STORAGE_BASE = (os.environ.get("INTEGRATION_PROXY_URL") or "").strip() or "https://integrations.emergentagent.com"
+STORAGE_URL = STORAGE_BASE.rstrip("/") + "/objstore/api/v1/storage"
+EMERGENT_KEY = os.environ.get("EMERGENT_LLM_KEY")
+APP_NAME = "nexusgame"
+storage_key = None
 
 logger = logging.getLogger(__name__)
+
+
+def init_storage(force: bool = False):
+    global storage_key
+    if storage_key and not force:
+        return storage_key
+    resp = requests.post(f"{STORAGE_URL}/init", json={"emergent_key": EMERGENT_KEY}, timeout=30)
+    resp.raise_for_status()
+    storage_key = resp.json()["storage_key"]
+    return storage_key
+
+
+def put_object(path: str, data: bytes, content_type: str) -> dict:
+    key = init_storage()
+    resp = requests.put(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key, "Content-Type": content_type}, data=data, timeout=120)
+    if resp.status_code == 404:
+        key = init_storage(force=True)
+        resp = requests.put(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key, "Content-Type": content_type}, data=data, timeout=120)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def get_object(path: str):
+    key = init_storage()
+    resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+    if resp.status_code == 404:
+        key = init_storage(force=True)
+        resp = requests.get(f"{STORAGE_URL}/objects/{path}", headers={"X-Storage-Key": key}, timeout=60)
+    resp.raise_for_status()
+    return resp.content, resp.headers.get("Content-Type", "application/octet-stream")
 
 
 def iso(days_ago=0):
@@ -122,7 +163,6 @@ async def admin_verify(admin=Depends(require_admin)):
 
 @api_router.post("/admin/products")
 async def create_product(data: ProductIn, admin=Depends(require_admin)):
-    import uuid
     doc = data.model_dump()
     doc["id"] = str(uuid.uuid4())[:8]
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
@@ -205,7 +245,7 @@ async def payment_status(session_id: str):
     record = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
     if not record:
         raise HTTPException(404, "Transaksi tidak ditemukan")
-    if record.get("payment_status") != "paid":
+    if record.get("payment_status") != "paid" and record.get("provider") != "xendit":
         try:
             stripe_checkout = StripeCheckout(api_key=STRIPE_API_KEY, webhook_url="")
             status = await stripe_checkout.get_checkout_status(session_id)
@@ -240,8 +280,132 @@ async def stripe_webhook(request: Request):
     return {"status": "ok"}
 
 
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+
+
+@api_router.post("/admin/upload")
+async def upload_image(file: UploadFile = File(...), admin=Depends(require_admin)):
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(400, "Hanya file gambar (JPG, PNG, WEBP, GIF) yang diizinkan")
+    data = await file.read()
+    if len(data) > 5 * 1024 * 1024:
+        raise HTTPException(400, "Ukuran gambar maksimal 5MB")
+    ext = file.filename.split(".")[-1].lower() if "." in file.filename else "jpg"
+    path = f"{APP_NAME}/uploads/{uuid.uuid4().hex}.{ext}"
+    try:
+        result = put_object(path, data, file.content_type)
+    except Exception as e:
+        logger.error(f"Storage upload failed: {e}")
+        raise HTTPException(502, "Gagal mengupload gambar")
+    await db.files.insert_one({
+        "storage_path": result["path"],
+        "original_filename": file.filename,
+        "content_type": file.content_type,
+        "size": result.get("size", len(data)),
+        "is_deleted": False,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"url": f"/api/files/{result['path']}"}
+
+
+@api_router.get("/files/{path:path}")
+async def serve_file(path: str):
+    record = await db.files.find_one({"storage_path": path, "is_deleted": False})
+    if not record:
+        raise HTTPException(404, "File tidak ditemukan")
+    try:
+        data, content_type = get_object(path)
+    except Exception:
+        raise HTTPException(404, "File tidak ditemukan")
+    return Response(content=data, media_type=record.get("content_type", content_type))
+
+
+@api_router.get("/payments/methods")
+async def payment_methods():
+    methods = [{"id": "stripe", "label": "Kartu (Stripe)"}]
+    if XENDIT_SECRET_KEY:
+        methods.append({"id": "xendit", "label": "QRIS / VA / E-Wallet"})
+    return methods
+
+
+@api_router.post("/payments/xendit/checkout")
+async def xendit_checkout(req: CheckoutIn):
+    if not XENDIT_SECRET_KEY:
+        raise HTTPException(503, "Pembayaran Xendit (QRIS/VA/E-Wallet) belum diaktifkan")
+    product = await db.products.find_one({"id": req.product_id}, {"_id": 0})
+    if not product:
+        raise HTTPException(404, "Produk tidak ditemukan")
+    if product.get("stock", 0) < 1:
+        raise HTTPException(400, "Stok produk habis")
+    order_id = f"NXG-{uuid.uuid4().hex[:16].upper()}"
+    await db.payment_transactions.insert_one({
+        "session_id": order_id,
+        "provider": "xendit",
+        "product_id": product["id"],
+        "product_title": product["title"],
+        "amount": float(product["price"]),
+        "currency": "idr",
+        "status": "initiated",
+        "payment_status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    })
+    try:
+        resp = requests.post(
+            "https://api.xendit.co/v2/invoices",
+            auth=(XENDIT_SECRET_KEY, ""),
+            json={
+                "external_id": order_id,
+                "amount": product["price"],
+                "description": f"NEXUSGAME - {product['title']}",
+                "should_send_email": False,
+                "success_redirect_url": f"{req.origin_url}/payment/success?session_id={order_id}",
+                "failure_redirect_url": f"{req.origin_url}/payment/cancel",
+                "currency": "IDR",
+            },
+            timeout=20,
+        )
+        resp.raise_for_status()
+        invoice = resp.json()
+    except Exception as e:
+        logger.error(f"Xendit invoice error: {e}")
+        await db.payment_transactions.update_one(
+            {"session_id": order_id},
+            {"$set": {"status": "payment_error", "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+        raise HTTPException(502, "Penyedia pembayaran tidak tersedia")
+    await db.payment_transactions.update_one(
+        {"session_id": order_id},
+        {"$set": {"xendit_invoice_id": invoice["id"], "invoice_url": invoice["invoice_url"], "updated_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    return {"checkout_url": invoice["invoice_url"], "session_id": order_id}
+
+
+@api_router.post("/webhook/xendit")
+async def xendit_webhook(request: Request):
+    token = request.headers.get("x-callback-token", "")
+    if not XENDIT_WEBHOOK_TOKEN or token != XENDIT_WEBHOOK_TOKEN:
+        raise HTTPException(401, "Token webhook tidak valid")
+    event = await request.json()
+    external_id = event.get("external_id")
+    new_status = {"PAID": "paid", "SETTLED": "paid", "EXPIRED": "expired", "FAILED": "failed"}.get((event.get("status") or "").upper())
+    if external_id and new_status == "paid":
+        await mark_paid(external_id)
+    elif external_id and new_status:
+        await db.payment_transactions.update_one(
+            {"session_id": external_id, "payment_status": {"$ne": "paid"}},
+            {"$set": {"status": new_status, "payment_status": new_status, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        )
+    return {"received": True}
+
+
 @app.on_event("startup")
 async def seed_products():
+    try:
+        init_storage()
+        logger.info("Object storage initialized")
+    except Exception as e:
+        logger.error(f"Storage init failed: {e}")
     if await db.products.count_documents({}) == 0:
         await db.products.insert_many([dict(p) for p in SEED_PRODUCTS])
         logger.info(f"Seeded {len(SEED_PRODUCTS)} products")

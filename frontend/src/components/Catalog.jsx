@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, PackageSearch } from "lucide-react";
-import { formatIDR } from "@/lib/api";
+import { formatIDR, imgSrc } from "@/lib/api";
 
 const CATEGORIES = ["Semua Kategori", "Akun Game", "Jasa Joki", "Top Up Diamond"];
 const SORTS = [
@@ -144,7 +144,7 @@ export const Catalog = ({ products, loading, onSelect }) => {
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
-                    src={p.image}
+                    src={imgSrc(p.image)}
                     alt={p.title}
                     loading="lazy"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

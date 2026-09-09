@@ -2,19 +2,24 @@ import { useEffect, useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ShieldCheck, Zap, MessageCircle, Loader2, Star } from "lucide-react";
 import { toast } from "sonner";
-import { api, formatIDR, waLink } from "@/lib/api";
+import { api, formatIDR, waLink, imgSrc } from "@/lib/api";
 
 export const ProductModal = ({ product, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [methods, setMethods] = useState([{ id: "stripe", label: "Kartu (Stripe)" }]);
+  const [method, setMethod] = useState("stripe");
 
   useEffect(() => {
     setLoading(false);
+    setMethod("stripe");
+    api.get("/payments/methods").then((r) => setMethods(r.data)).catch(() => {});
   }, [product]);
 
   const handleBuy = async () => {
     setLoading(true);
     try {
-      const { data } = await api.post("/payments/checkout", {
+      const endpoint = method === "xendit" ? "/payments/xendit/checkout" : "/payments/checkout";
+      const { data } = await api.post(endpoint, {
         product_id: product.id,
         origin_url: window.location.origin,
       });
@@ -34,7 +39,7 @@ export const ProductModal = ({ product, onClose }) => {
         {product && (
           <div className="grid md:grid-cols-2">
             <div className="relative aspect-square md:aspect-auto md:min-h-[420px]">
-              <img src={product.image} alt={product.title} className="absolute inset-0 w-full h-full object-cover" />
+              <img src={imgSrc(product.image)} alt={product.title} className="absolute inset-0 w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-panel via-transparent to-transparent" />
               {product.badge && (
                 <span className={`absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 ${
@@ -77,6 +82,22 @@ export const ProductModal = ({ product, onClose }) => {
                 <p className="font-mono font-bold text-2xl text-neon" data-testid="modal-price">
                   {formatIDR(product.price)}
                 </p>
+                {methods.length > 1 && (
+                  <div className="mt-3 grid grid-cols-2 gap-2" data-testid="payment-method-selector">
+                    {methods.map((m) => (
+                      <button
+                        key={m.id}
+                        onClick={() => setMethod(m.id)}
+                        data-testid={`payment-method-${m.id}`}
+                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-2.5 border transition-colors duration-200 ${
+                          method === m.id ? "border-neon text-neon bg-neon/10" : "border-line text-slate-500 hover:text-slate-300"
+                        }`}
+                      >
+                        {m.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <button
                   onClick={handleBuy}
                   disabled={loading || product.stock < 1}
