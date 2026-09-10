@@ -14,6 +14,7 @@ const BADGES = ["", "Verified Seller", "Garansi 100%", "Diskon Hot"];
 const EMPTY_FORM = {
   game: "", category: "Akun Game", title: "", price: 0, rank: "",
   image: "", images: [], stock: 1, badge: "", description: "", featured: false, sold: 0, rating: 5.0,
+  warranty: "100%", delivery_info: "",
 };
 
 export default function Admin() {
@@ -88,6 +89,7 @@ export default function Admin() {
       game: p.game, category: p.category, title: p.title, price: p.price,
       rank: p.rank || "", image: p.image || "", images: p.images || [], stock: p.stock, badge: p.badge || "",
       description: p.description || "", featured: !!p.featured, sold: p.sold || 0, rating: p.rating || 5,
+      warranty: p.warranty || "100%", delivery_info: p.delivery_info || "",
     });
     setEditing(p.id);
   };
@@ -420,6 +422,11 @@ export default function Admin() {
                 <input type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} data-testid="form-stock-input"
                   className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 transition-colors" />
               </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">Garansi</span>
+                <input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="mis. 100% / 30 Hari" data-testid="form-warranty-input"
+                  className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
+              </label>
               <div className="sm:col-span-2">
                 <span className="text-[10px] uppercase tracking-widest text-slate-500">Gambar Produk</span>
                 <div className="mt-1.5 flex items-start gap-3">
@@ -472,6 +479,11 @@ export default function Admin() {
                 <span className="text-[10px] uppercase tracking-widest text-slate-500">Deskripsi</span>
                 <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={4} data-testid="form-description-input"
                   className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 leading-relaxed transition-colors" />
+              </label>
+              <label className="block sm:col-span-2">
+                <span className="text-[10px] uppercase tracking-widest text-neon">Info Akun / Link (dikirim otomatis setelah bayar)</span>
+                <textarea value={form.delivery_info} onChange={(e) => setForm({ ...form, delivery_info: e.target.value })} rows={4} placeholder="Tempel detail login akun game, kode voucher, atau link (mis. https://...). Pembeli akan langsung melihat ini di halaman sukses setelah pembayaran terkonfirmasi." data-testid="form-delivery-input"
+                  className="mt-1.5 w-full bg-void border border-neon/30 focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 leading-relaxed placeholder:text-slate-600 transition-colors" />
               </label>
             </div>
             <div className="border-t border-line px-6 py-4 flex justify-end gap-2">

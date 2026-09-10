@@ -128,7 +128,7 @@ export const ProductModal = ({ product, onClose }) => {
                 </div>
                 <div className="bg-void px-2 py-3">
                   <p className="text-[9px] uppercase tracking-widest text-slate-500">Garansi</p>
-                  <p className="text-[11px] font-bold mt-1 text-lime">100%</p>
+                  <p className="text-[11px] font-bold mt-1 text-lime" data-testid="modal-warranty">{product.warranty || "100%"}</p>
                 </div>
               </div>
 
@@ -166,14 +166,14 @@ export const ProductModal = ({ product, onClose }) => {
                   {product.stock < 1 ? "Stok Habis" : loading ? "Memproses..." : "Beli Sekarang"}
                 </button>
                 <a
-                  href={waLink(`Halo WillJustPlay, saya mau tanya tentang: ${product.title}`)}
+                  href={waLink(`Halo WillJustPlay, saya mau BELI MANUAL produk: ${product.title} (${formatIDR(product.price)})`)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  data-testid="modal-whatsapp-button"
+                  data-testid="modal-manual-buy-button"
                   className="mt-2 w-full flex items-center justify-center gap-2 border border-line hover:border-neon/60 text-slate-300 hover:text-neon text-[11px] font-bold uppercase tracking-[0.2em] py-3 transition-colors duration-300"
                 >
                   <MessageCircle size={13} />
-                  Tanya Penjual
+                  Beli Manual
                 </a>
                 <p className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-slate-500">
                   <ShieldCheck size={12} className="text-lime" />

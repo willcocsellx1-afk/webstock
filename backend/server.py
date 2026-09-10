@@ -126,6 +126,8 @@ class ProductIn(BaseModel):
     featured: bool = False
     sold: int = 0
     rating: float = 5.0
+    warranty: str = "100%"
+    delivery_info: str = ""
 
 
 class CheckoutIn(BaseModel):
@@ -254,6 +256,7 @@ async def create_checkout(req: CheckoutIn, request: Request):
         "session_id": session.session_id,
         "product_id": product["id"],
         "product_title": product["title"],
+        "delivery_info": product.get("delivery_info", ""),
         "amount": float(product["price"]),
         "currency": "idr",
         "status": "initiated",
@@ -282,7 +285,10 @@ async def payment_status(session_id: str):
                 record["status"] = "completed"
         except Exception as e:
             logger.warning(f"Stripe status check failed: {e}")
-    return {"session_id": record["session_id"], "status": record["status"], "payment_status": record["payment_status"]}
+    resp = {"session_id": record["session_id"], "status": record["status"], "payment_status": record["payment_status"]}
+    if record.get("payment_status") == "paid":
+        resp["delivery_info"] = record.get("delivery_info", "")
+    return resp
 
 
 @api_router.post("/webhook/stripe")
@@ -411,6 +417,7 @@ async def midtrans_checkout(req: CheckoutIn):
         "provider": "midtrans",
         "product_id": product["id"],
         "product_title": product["title"],
+        "delivery_info": product.get("delivery_info", ""),
         "amount": float(product["price"]),
         "currency": "idr",
         "status": "initiated",

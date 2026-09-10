@@ -116,7 +116,7 @@ export const Hero = ({ featured, products = [] }) => {
             {[
               { v: compact(totalSold), l: "Produk Terjual", t: "hero-metric-sold" },
               { v: `${avgRating}/5`, l: "Rating Pembeli", t: "hero-metric-rating" },
-              { v: "Responsif", l: "CS Online", t: "hero-metric-cs" },
+              { v: "10.00-22.00", l: "Jam Operasional", t: "hero-metric-cs" },
             ].map((s) => (
               <div key={s.l} className="px-4 py-4">
                 <p className="font-display font-bold text-lg sm:text-xl text-neon" data-testid={s.t}>{s.v}</p>

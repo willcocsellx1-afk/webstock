@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2, Loader2, Clock, Home, MessageCircle } from "lucide-react";
+import { CheckCircle2, Loader2, Clock, Home, MessageCircle, KeyRound, ExternalLink, Copy } from "lucide-react";
+import { toast } from "sonner";
 import { api, waLink } from "@/lib/api";
 
 export default function PaymentSuccess() {
   const [params] = useSearchParams();
   const sessionId = params.get("session_id");
   const [status, setStatus] = useState("checking");
+  const [delivery, setDelivery] = useState("");
 
   useEffect(() => {
     if (!sessionId) {
@@ -21,6 +23,7 @@ export default function PaymentSuccess() {
         const { data } = await api.get(`/payments/status/${sessionId}`);
         if (data.payment_status === "paid") {
           setStatus("paid");
+          setDelivery(data.delivery_info || "");
           clearInterval(timer);
         } else if (tries > 12) {
           setStatus("pending");
@@ -35,6 +38,11 @@ export default function PaymentSuccess() {
     }, 2000);
     return () => clearInterval(timer);
   }, [sessionId]);
+
+  const isLink = /^https?:\/\//i.test(delivery.trim());
+  const copyDelivery = () => {
+    navigator.clipboard.writeText(delivery).then(() => toast.success("Info akun disalin"));
+  };
 
   return (
     <div data-testid="payment-success-page" className="min-h-screen bg-void grid-bg flex items-center justify-center px-4">
@@ -60,9 +68,43 @@ export default function PaymentSuccess() {
               Pembayaran <span className="text-lime">Berhasil</span>
             </h1>
             <p className="text-xs text-slate-400 mt-3 leading-relaxed">
-              Pesananmu sudah kami terima. Data akun / detail pesanan akan dikirim
-              via WhatsApp dalam 5-15 menit.
+              Pesananmu sudah kami terima dan pembayaran terkonfirmasi.
             </p>
+            {delivery ? (
+              <div className="mt-5 text-left border border-neon/40 bg-neon/5 p-4" data-testid="delivery-info-box">
+                <div className="flex items-center gap-2 mb-3">
+                  <KeyRound size={14} className="text-neon" />
+                  <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-neon">Info Akun / Akses Kamu</span>
+                </div>
+                {isLink ? (
+                  <a
+                    href={delivery.trim()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid="delivery-info-link"
+                    className="flex items-center justify-center gap-2 bg-neon text-void font-display font-bold text-[11px] uppercase tracking-[0.2em] py-3 hover:bg-lime transition-colors duration-300 break-all"
+                  >
+                    <ExternalLink size={14} /> Buka Link Akun
+                  </a>
+                ) : (
+                  <pre data-testid="delivery-info-text" className="whitespace-pre-wrap break-words font-mono text-[11px] text-slate-200 leading-relaxed">{delivery}</pre>
+                )}
+                <button
+                  onClick={copyDelivery}
+                  data-testid="delivery-info-copy"
+                  className="mt-3 w-full flex items-center justify-center gap-2 border border-line hover:border-neon/60 text-slate-400 hover:text-neon text-[10px] font-bold uppercase tracking-[0.2em] py-2.5 transition-colors duration-300"
+                >
+                  <Copy size={12} /> Salin Info
+                </button>
+                <p className="text-[10px] font-mono text-slate-500 mt-3 leading-relaxed">
+                  Simpan info ini baik-baik. Butuh bantuan? Hubungi CS via WhatsApp.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 mt-3 leading-relaxed">
+                Data akun / detail pesanan akan dikirim via WhatsApp dalam 5-15 menit.
+              </p>
+            )}
             <p className="text-[10px] font-mono text-slate-600 mt-4 break-all" data-testid="payment-session-id">
               ID Sesi: {sessionId}
             </p>
