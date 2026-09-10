@@ -123,11 +123,13 @@ class ProductIn(BaseModel):
     images: list[str] = []
     stock: int = 1
     badge: str = ""
+    badges: list[str] = []
     featured: bool = False
     sold: int = 0
     rating: float = 5.0
     warranty: str = "100%"
     delivery_info: str = ""
+    condition: str = ""
 
 
 class CheckoutIn(BaseModel):
@@ -188,6 +190,7 @@ async def admin_verify(admin=Depends(require_admin)):
 async def create_product(data: ProductIn, admin=Depends(require_admin)):
     doc = data.model_dump()
     doc["images"] = [u for u in doc["images"] if u][:5]
+    doc["badges"] = [b for b in doc.get("badges", []) if b][:3]
     doc["id"] = str(uuid.uuid4())[:8]
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.products.insert_one(doc)
@@ -199,6 +202,7 @@ async def create_product(data: ProductIn, admin=Depends(require_admin)):
 async def update_product(product_id: str, data: ProductIn, admin=Depends(require_admin)):
     doc = data.model_dump()
     doc["images"] = [u for u in doc["images"] if u][:5]
+    doc["badges"] = [b for b in doc.get("badges", []) if b][:3]
     res = await db.products.update_one({"id": product_id}, {"$set": doc})
     if res.matched_count == 0:
         raise HTTPException(404, "Produk tidak ditemukan")
@@ -358,7 +362,6 @@ async def payment_methods():
     methods = []
     if MIDTRANS_SERVER_KEY:
         methods.append({"id": "midtrans", "label": "QRIS / VA / E-Wallet"})
-    methods.append({"id": "stripe", "label": "Kartu (Stripe)"})
     return methods
 
 

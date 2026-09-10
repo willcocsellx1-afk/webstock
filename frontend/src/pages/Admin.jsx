@@ -9,12 +9,13 @@ import { api, formatIDR, imgSrc } from "@/lib/api";
 import { AdminTestimonials } from "@/components/AdminTestimonials";
 
 const CATEGORIES = ["Akun Game", "Jasa Joki", "Topup Game"];
-const BADGES = ["", "Verified Seller", "Garansi 100%", "Diskon Hot"];
+const BADGE_PRESETS = ["Verified Seller", "Garansi 100%", "Diskon Hot"];
+const CONDITION_PRESETS = ["ready", "unready", "sold"];
 
 const EMPTY_FORM = {
   game: "", category: "Akun Game", title: "", price: 0, rank: "",
-  image: "", images: [], stock: 1, badge: "", description: "", featured: false, sold: 0, rating: 5.0,
-  warranty: "100%", delivery_info: "",
+  image: "", images: [], stock: 1, badges: [], description: "", featured: false, sold: 0, rating: 5.0,
+  warranty: "100%", delivery_info: "", condition: "ready",
 };
 
 export default function Admin() {
@@ -30,6 +31,7 @@ export default function Admin() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [badgeInput, setBadgeInput] = useState("");
 
   const headers = { "x-admin-key": key };
 
@@ -87,9 +89,10 @@ export default function Admin() {
   const openEdit = (p) => {
     setForm({
       game: p.game, category: p.category, title: p.title, price: p.price,
-      rank: p.rank || "", image: p.image || "", images: p.images || [], stock: p.stock, badge: p.badge || "",
+      rank: p.rank || "", image: p.image || "", images: p.images || [], stock: p.stock,
+      badges: p.badges?.length ? p.badges : (p.badge ? [p.badge] : []),
       description: p.description || "", featured: !!p.featured, sold: p.sold || 0, rating: p.rating || 5,
-      warranty: p.warranty || "100%", delivery_info: p.delivery_info || "",
+      warranty: p.warranty || "100%", delivery_info: p.delivery_info || "", condition: p.condition || "",
     });
     setEditing(p.id);
   };
@@ -101,7 +104,7 @@ export default function Admin() {
     }
     setSaving(true);
     try {
-      const payload = { ...form, price: Number(form.price), stock: Number(form.stock), sold: Number(form.sold), rating: Number(form.rating) };
+      const payload = { ...form, badge: form.badges[0] || "", price: Number(form.price), stock: Number(form.stock), sold: Number(form.sold), rating: Number(form.rating) };
       if (editing === "new") {
         await api.post("/admin/products", payload, { headers });
         toast.success("Produk baru ditambahkan");
@@ -176,6 +179,16 @@ export default function Admin() {
   };
 
   const removeGalleryImage = (idx) => setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+
+  const addBadge = (b) => {
+    const v = (b || "").trim();
+    if (!v) return;
+    if (form.badges.includes(v)) { setBadgeInput(""); return; }
+    if (form.badges.length >= 3) { toast.error("Maksimal 3 badge"); return; }
+    setForm((prev) => ({ ...prev, badges: [...prev.badges, v] }));
+    setBadgeInput("");
+  };
+  const removeBadge = (b) => setForm((prev) => ({ ...prev, badges: prev.badges.filter((x) => x !== b) }));
 
   const resetSeed = async () => {
     if (!window.confirm("Reset katalog ke data contoh awal? Semua perubahan akan hilang.")) return;
@@ -427,6 +440,14 @@ export default function Admin() {
                 <input value={form.warranty} onChange={(e) => setForm({ ...form, warranty: e.target.value })} placeholder="mis. 100% / 30 Hari" data-testid="form-warranty-input"
                   className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
               </label>
+              <label className="block">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">Kondisi Akun</span>
+                <input list="condition-presets" value={form.condition} onChange={(e) => setForm({ ...form, condition: e.target.value })} placeholder="ready / unready / sold / custom" data-testid="form-condition-input"
+                  className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
+                <datalist id="condition-presets">
+                  {CONDITION_PRESETS.map((c) => <option key={c} value={c} />)}
+                </datalist>
+              </label>
               <div className="sm:col-span-2">
                 <span className="text-[10px] uppercase tracking-widest text-slate-500">Gambar Produk</span>
                 <div className="mt-1.5 flex items-start gap-3">
@@ -463,14 +484,36 @@ export default function Admin() {
                   )}
                 </div>
               </div>
-              <label className="block">
-                <span className="text-[10px] uppercase tracking-widest text-slate-500">Badge</span>
-                <select value={form.badge} onChange={(e) => setForm({ ...form, badge: e.target.value })} data-testid="form-badge-select"
-                  className="mt-1.5 w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 transition-colors">
-                  {BADGES.map((b) => <option key={b} value={b}>{b || "Tanpa Badge"}</option>)}
-                </select>
-              </label>
-              <label className="flex items-center gap-2.5 pt-6">
+              <div className="sm:col-span-2">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">Badge ({form.badges.length}/3) — bisa custom, maks 3</span>
+                {form.badges.length > 0 && (
+                  <div className="mt-1.5 flex flex-wrap gap-2" data-testid="form-badges-list">
+                    {form.badges.map((b) => (
+                      <span key={b} data-testid={`form-badge-chip-${b}`} className="flex items-center gap-1.5 bg-neon/10 border border-neon/40 text-neon text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5">
+                        {b}
+                        <button type="button" onClick={() => removeBadge(b)} data-testid={`form-badge-remove-${b}`} className="text-neon/70 hover:text-coral transition-colors"><X size={11} /></button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {BADGE_PRESETS.map((b) => (
+                    <button key={b} type="button" onClick={() => addBadge(b)} data-testid={`form-badge-preset-${b}`} disabled={form.badges.includes(b) || form.badges.length >= 3}
+                      className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 border border-line text-slate-400 hover:text-neon hover:border-neon/50 transition-colors disabled:opacity-30 disabled:pointer-events-none">
+                      + {b}
+                    </button>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  <input value={badgeInput} onChange={(e) => setBadgeInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addBadge(badgeInput); } }}
+                    placeholder="Badge custom..." data-testid="form-badge-custom-input"
+                    className="flex-1 bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
+                  <button type="button" onClick={() => addBadge(badgeInput)} data-testid="form-badge-add-button" disabled={form.badges.length >= 3}
+                    className="px-4 border border-neon/50 text-neon text-[11px] font-bold uppercase tracking-widest hover:bg-neon hover:text-void transition-colors disabled:opacity-30 disabled:pointer-events-none">Tambah</button>
+                </div>
+              </div>
+              <label className="flex items-center gap-2.5 sm:col-span-2 pt-2">
                 <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} data-testid="form-featured-checkbox"
                   className="w-4 h-4 accent-[#00F0FF]" />
                 <span className="text-[10px] uppercase tracking-widest text-slate-400">Tampilkan sebagai Unggulan di Hero</span>

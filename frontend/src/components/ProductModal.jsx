@@ -5,14 +5,25 @@ import { ShieldCheck, Zap, MessageCircle, Loader2, Star, Maximize2, X, ChevronLe
 import { toast } from "sonner";
 import { api, formatIDR, waLink, imgSrc } from "@/lib/api";
 
+const badgeCls = (b) =>
+  b === "Diskon Hot" ? "bg-coral text-white" : b === "Garansi 100%" ? "bg-lime text-void" : "bg-neon text-void";
+const condCls = (c) => {
+  const v = (c || "").toLowerCase();
+  if (v === "ready") return "bg-lime text-void";
+  if (v === "sold") return "bg-slate-600 text-slate-200";
+  if (v === "unready") return "bg-coral text-white";
+  return "border border-neon/50 text-neon bg-void";
+};
+
 export const ProductModal = ({ product, onClose }) => {
   const [loading, setLoading] = useState(false);
-  const [methods, setMethods] = useState([{ id: "stripe", label: "Kartu (Stripe)" }]);
-  const [method, setMethod] = useState("stripe");
+  const [methods, setMethods] = useState([{ id: "midtrans", label: "QRIS / VA / E-Wallet" }]);
+  const [method, setMethod] = useState("midtrans");
   const [active, setActive] = useState(0);
   const [zoom, setZoom] = useState(false);
   const [touchX, setTouchX] = useState(null);
   const gallery = product ? [product.image, ...(product.images || [])].filter(Boolean) : [];
+  const mBadges = product ? (product.badges?.length ? product.badges : (product.badge ? [product.badge] : [])).slice(0, 3) : [];
 
   const goNext = () => setActive((i) => (i + 1) % gallery.length);
   const goPrev = () => setActive((i) => (i - 1 + gallery.length) % gallery.length);
@@ -23,7 +34,7 @@ export const ProductModal = ({ product, onClose }) => {
     setZoom(false);
     api.get("/payments/methods").then((r) => {
       setMethods(r.data);
-      setMethod(r.data[0]?.id || "stripe");
+      setMethod(r.data[0]?.id || "midtrans");
     }).catch(() => {});
   }, [product]);
 
@@ -50,8 +61,7 @@ export const ProductModal = ({ product, onClose }) => {
   const handleBuy = async () => {
     setLoading(true);
     try {
-      const endpoint = method === "midtrans" ? "/payments/midtrans/checkout" : "/payments/checkout";
-      const { data } = await api.post(endpoint, {
+      const { data } = await api.post("/payments/midtrans/checkout", {
         product_id: product.id,
         origin_url: window.location.origin,
       });
@@ -95,18 +105,25 @@ export const ProductModal = ({ product, onClose }) => {
                   ))}
                 </div>
               )}
-              {product.badge && (
-                <span className={`absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 ${
-                  product.badge === "Diskon Hot" ? "bg-coral text-white" : "bg-neon text-void"
-                }`}>
-                  {product.badge}
-                </span>
+              {mBadges.length > 0 && (
+                <div className="absolute top-4 left-4 flex flex-col items-start gap-1.5" data-testid="modal-badges">
+                  {mBadges.map((b) => (
+                    <span key={b} className={`text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 ${badgeCls(b)}`}>
+                      {b}
+                    </span>
+                  ))}
+                </div>
               )}
             </div>
             <div className="p-6 sm:p-8 flex flex-col">
               <p className="text-[10px] font-mono uppercase tracking-[0.3em] text-neon mb-2">
                 {product.game} &bull; {product.category}
               </p>
+              {product.condition && (
+                <span className={`self-start mb-2 text-[10px] font-bold uppercase tracking-widest px-2 py-1 ${condCls(product.condition)}`} data-testid="modal-condition">
+                  {product.condition}
+                </span>
+              )}
               <h3 className="font-display font-bold text-lg leading-snug" data-testid="modal-product-title">
                 {product.title}
               </h3>
@@ -177,7 +194,7 @@ export const ProductModal = ({ product, onClose }) => {
                 </a>
                 <p className="mt-3 flex items-center justify-center gap-1.5 text-[10px] font-mono text-slate-500">
                   <ShieldCheck size={12} className="text-lime" />
-                  Pembayaran aman via Midtrans &amp; Stripe &bull; Garansi uang kembali
+                  Pembayaran aman via Midtrans (QRIS/VA/E-Wallet) &bull; Garansi uang kembali
                 </p>
               </div>
             </div>

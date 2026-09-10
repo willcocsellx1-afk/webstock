@@ -55,7 +55,7 @@ export const Footer = () => (
           <p className="text-[10px] uppercase tracking-[0.3em] text-slate-500 mb-4">Jaminan Kami</p>
           <ul className="space-y-3 text-xs text-slate-400">
             <li className="flex items-center gap-2.5"><ShieldCheck size={14} className="text-lime" /> Garansi 100% uang kembali</li>
-            <li className="flex items-center gap-2.5"><CreditCard size={14} className="text-neon" /> Pembayaran aman via Midtrans (QRIS/VA/E-Wallet) &amp; Stripe</li>
+            <li className="flex items-center gap-2.5"><CreditCard size={14} className="text-neon" /> Pembayaran aman via Midtrans (QRIS/VA/E-Wallet)</li>
             <li className="flex items-center gap-2.5"><Clock size={14} className="text-coral" /> Proses cepat 5-15 menit</li>
           </ul>
         </div>

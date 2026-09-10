@@ -3,6 +3,16 @@ import { motion } from "framer-motion";
 import { Search, PackageSearch, Images } from "lucide-react";
 import { formatIDR, imgSrc } from "@/lib/api";
 
+const badgeCls = (b) =>
+  b === "Diskon Hot" ? "bg-coral text-white" : b === "Garansi 100%" ? "bg-lime text-void" : "bg-neon text-void";
+const condCls = (c) => {
+  const v = (c || "").toLowerCase();
+  if (v === "ready") return "bg-lime text-void";
+  if (v === "sold") return "bg-slate-600 text-slate-200";
+  if (v === "unready") return "bg-coral text-white";
+  return "border border-neon/50 text-neon bg-void";
+};
+
 const CATEGORIES = ["Semua Kategori", "Akun Game", "Jasa Joki", "Topup Game"];
 const SORTS = [
   { v: "populer", l: "Paling Populer" },
@@ -155,13 +165,16 @@ export const Catalog = ({ products, loading, onSelect }) => {
                       <Images size={10} /> +{p.images.length} foto
                     </span>
                   )}
-                  {p.badge && (
-                    <span className={`absolute top-3 left-3 text-[9px] font-bold uppercase tracking-widest px-2 py-1 ${
-                      p.badge === "Diskon Hot" ? "bg-coral text-white" : "bg-neon text-void"
-                    }`}>
-                      {p.badge}
-                    </span>
-                  )}
+                  {(() => {
+                    const cbs = (p.badges?.length ? p.badges : (p.badge ? [p.badge] : [])).slice(0, 3);
+                    return cbs.length > 0 ? (
+                      <div className="absolute top-3 left-3 flex flex-col items-start gap-1" data-testid={`badges-${p.id}`}>
+                        {cbs.map((b) => (
+                          <span key={b} className={`text-[9px] font-bold uppercase tracking-widest px-2 py-1 ${badgeCls(b)}`}>{b}</span>
+                        ))}
+                      </div>
+                    ) : null;
+                  })()}
                   {p.stock < 1 && (
                     <span data-testid={`stock-out-${p.id}`} className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-coral text-white">
                       Habis
@@ -172,10 +185,17 @@ export const Catalog = ({ products, loading, onSelect }) => {
                   </span>
                 </div>
                 <div className="p-4 space-y-2">
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">
-                    {p.category}
-                    {p.rank ? ` • ${p.rank}` : ""}
-                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-mono">
+                      {p.category}
+                      {p.rank ? ` • ${p.rank}` : ""}
+                    </p>
+                    {p.condition && (
+                      <span data-testid={`condition-${p.id}`} className={`shrink-0 text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 ${condCls(p.condition)}`}>
+                        {p.condition}
+                      </span>
+                    )}
+                  </div>
                   <h3 className="font-display font-bold text-[13px] leading-snug min-h-[2.4em]">
                     {p.title}
                   </h3>
