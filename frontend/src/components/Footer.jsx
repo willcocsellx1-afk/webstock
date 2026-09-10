@@ -19,16 +19,27 @@ export const Footer = () => (
             Marketplace akun game &amp; jasa joki terpercaya di Indonesia. Semua
             transaksi dilindungi garansi 100% uang kembali.
           </p>
-          <a
-            href={waLink("Halo WillJustPlay!")}
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="footer-whatsapp-button"
-            className="mt-6 inline-flex items-center gap-2 bg-neon text-void font-display font-bold text-[11px] uppercase tracking-[0.2em] px-5 py-3 hover:bg-lime transition-colors duration-300"
-          >
-            <MessageCircle size={14} />
-            Chat WhatsApp CS
-          </a>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <a
+              href={waLink("Halo WillJustPlay!")}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="footer-whatsapp-button"
+              className="inline-flex items-center gap-2 bg-neon text-void font-display font-bold text-[11px] uppercase tracking-[0.2em] px-5 py-3 hover:bg-lime transition-colors duration-300"
+            >
+              <MessageCircle size={14} />
+              Chat WhatsApp CS
+            </a>
+            <Link
+              to="/admin"
+              data-testid="footer-admin-link"
+              aria-label="Admin"
+              className="inline-flex items-center gap-2 border border-line text-slate-400 hover:text-neon hover:border-neon/60 font-display font-bold text-[11px] uppercase tracking-[0.2em] px-5 py-3 transition-colors duration-300"
+            >
+              <ShieldCheck size={14} />
+              Admin
+            </Link>
+          </div>
         </div>
 
         <div className="md:col-span-3">
@@ -61,16 +72,6 @@ export const Footer = () => (
         <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
           Akun &bull; Joki &bull; Top Up
         </p>
-      </div>
-      <div className="flex justify-end pt-3">
-        <Link
-          to="/admin"
-          data-testid="footer-hidden-admin-link"
-          aria-label="Admin"
-          className="text-slate-800 hover:text-neon/70 transition-colors duration-300 opacity-40 hover:opacity-100 p-1"
-        >
-          <ShieldCheck size={11} />
-        </Link>
       </div>
     </div>
   </footer>
