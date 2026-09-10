@@ -9,12 +9,14 @@ from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 import requests
 import uuid
 import base64
 import hashlib
 import hmac
+import bcrypt
+import jwt
 
 from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
 
@@ -29,6 +31,10 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 ADMIN_KEY = os.environ.get('ADMIN_KEY', 'NEXUS-ADMIN-8888')
+JWT_SECRET = os.environ['JWT_SECRET']
+JWT_ALG = "HS256"
+ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@willjustplay.com')
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'Musangpandan123')
 STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', 'sk_test_emergent')
 MIDTRANS_SERVER_KEY = os.environ.get('MIDTRANS_SERVER_KEY', '')
 MIDTRANS_BASE = "https://app.sandbox.midtrans.com" if MIDTRANS_SERVER_KEY.startswith("SB-") else "https://app.midtrans.com"
@@ -146,9 +152,77 @@ class TestimonialIn(BaseModel):
     image: str = ""
 
 
-async def require_admin(x_admin_key: Optional[str] = Header(None)):
-    if x_admin_key != ADMIN_KEY:
-        raise HTTPException(status_code=401, detail="Kunci admin salah")
+class RegisterIn(BaseModel):
+    email: EmailStr
+    password: str = Field(min_length=6)
+    name: str = ""
+
+
+class LoginIn(BaseModel):
+    email: EmailStr
+    password: str
+
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+    except Exception:
+        return False
+
+
+def create_token(user: dict) -> str:
+    payload = {
+        "sub": user["id"],
+        "email": user["email"],
+        "role": user.get("role", "buyer"),
+        "exp": datetime.now(timezone.utc) + timedelta(days=7),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALG)
+
+
+def public_user(user: dict) -> dict:
+    return {
+        "id": user["id"],
+        "email": user["email"],
+        "name": user.get("name", ""),
+        "role": user.get("role", "buyer"),
+        "wishlist": user.get("wishlist", []),
+    }
+
+
+async def user_from_request(request: Request):
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        return None
+    try:
+        payload = jwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALG])
+    except jwt.PyJWTError:
+        return None
+    return await db.users.find_one({"id": payload.get("sub")}, {"_id": 0, "password_hash": 0})
+
+
+async def get_current_user(request: Request):
+    user = await user_from_request(request)
+    if not user:
+        raise HTTPException(status_code=401, detail="Silakan login terlebih dahulu")
+    return user
+
+
+async def get_optional_user(request: Request):
+    return await user_from_request(request)
+
+
+async def require_admin(request: Request, x_admin_key: Optional[str] = Header(None)):
+    if x_admin_key and x_admin_key == ADMIN_KEY:
+        return
+    user = await user_from_request(request)
+    if user and user.get("role") == "admin":
+        return
+    raise HTTPException(status_code=401, detail="Akses admin ditolak")
 
 
 @api_router.get("/")
@@ -184,6 +258,67 @@ async def list_games():
 @api_router.get("/admin/verify")
 async def admin_verify(admin=Depends(require_admin)):
     return {"ok": True}
+
+
+@api_router.post("/auth/register")
+async def auth_register(data: RegisterIn):
+    email = data.email.lower().strip()
+    if await db.users.find_one({"email": email}):
+        raise HTTPException(400, "Email sudah terdaftar")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "email": email,
+        "password_hash": hash_password(data.password),
+        "name": (data.name or "").strip() or email.split("@")[0],
+        "role": "buyer",
+        "wishlist": [],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.users.insert_one(doc)
+    return {"token": create_token(doc), "user": public_user(doc)}
+
+
+@api_router.post("/auth/login")
+async def auth_login(data: LoginIn):
+    email = data.email.lower().strip()
+    user = await db.users.find_one({"email": email})
+    if not user or not verify_password(data.password, user.get("password_hash", "")):
+        raise HTTPException(401, "Email atau password salah")
+    return {"token": create_token(user), "user": public_user(user)}
+
+
+@api_router.get("/auth/me")
+async def auth_me(user=Depends(get_current_user)):
+    return public_user(user)
+
+
+@api_router.get("/me/orders")
+async def my_orders(user=Depends(get_current_user)):
+    txs = await db.payment_transactions.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).to_list(300)
+    for t in txs:
+        if t.get("payment_status") != "paid":
+            t.pop("delivery_info", None)
+    return txs
+
+
+@api_router.get("/me/wishlist")
+async def get_wishlist(user=Depends(get_current_user)):
+    wl = user.get("wishlist", [])
+    if not wl:
+        return []
+    prods = await db.products.find({"id": {"$in": wl}}, {"_id": 0}).to_list(300)
+    return prods
+
+
+@api_router.post("/me/wishlist/{product_id}")
+async def toggle_wishlist(product_id: str, user=Depends(get_current_user)):
+    wl = list(user.get("wishlist", []))
+    if product_id in wl:
+        wl.remove(product_id)
+    else:
+        wl.append(product_id)
+    await db.users.update_one({"id": user["id"]}, {"$set": {"wishlist": wl}})
+    return {"wishlist": wl}
 
 
 @api_router.post("/admin/products")
@@ -241,7 +376,7 @@ async def mark_paid(session_id: str):
 
 
 @api_router.post("/payments/checkout")
-async def create_checkout(req: CheckoutIn, request: Request):
+async def create_checkout(req: CheckoutIn, request: Request, current=Depends(get_optional_user)):
     product = await db.products.find_one({"id": req.product_id}, {"_id": 0})
     if not product:
         raise HTTPException(404, "Produk tidak ditemukan")
@@ -261,6 +396,7 @@ async def create_checkout(req: CheckoutIn, request: Request):
         "product_id": product["id"],
         "product_title": product["title"],
         "delivery_info": product.get("delivery_info", ""),
+        "user_id": current["id"] if current else None,
         "amount": float(product["price"]),
         "currency": "idr",
         "status": "initiated",
@@ -406,7 +542,7 @@ async def sync_midtrans_status(order_id: str):
 
 
 @api_router.post("/payments/midtrans/checkout")
-async def midtrans_checkout(req: CheckoutIn):
+async def midtrans_checkout(req: CheckoutIn, current=Depends(get_optional_user)):
     if not MIDTRANS_SERVER_KEY:
         raise HTTPException(503, "Pembayaran Midtrans (QRIS/VA/E-Wallet) belum diaktifkan")
     product = await db.products.find_one({"id": req.product_id}, {"_id": 0})
@@ -421,6 +557,7 @@ async def midtrans_checkout(req: CheckoutIn):
         "product_id": product["id"],
         "product_title": product["title"],
         "delivery_info": product.get("delivery_info", ""),
+        "user_id": current["id"] if current else None,
         "amount": float(product["price"]),
         "currency": "idr",
         "status": "initiated",
@@ -503,6 +640,24 @@ async def seed_products():
         logger.info("Object storage initialized")
     except Exception as e:
         logger.error(f"Storage init failed: {e}")
+    try:
+        await db.users.create_index("email", unique=True)
+    except Exception as e:
+        logger.warning(f"User index creation failed: {e}")
+    existing_admin = await db.users.find_one({"email": ADMIN_EMAIL})
+    if existing_admin is None:
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()),
+            "email": ADMIN_EMAIL,
+            "password_hash": hash_password(ADMIN_PASSWORD),
+            "name": "Admin WillJustPlay",
+            "role": "admin",
+            "wishlist": [],
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        logger.info("Seeded admin user")
+    elif not verify_password(ADMIN_PASSWORD, existing_admin.get("password_hash", "")):
+        await db.users.update_one({"email": ADMIN_EMAIL}, {"$set": {"password_hash": hash_password(ADMIN_PASSWORD)}})
     if await db.products.count_documents({}) == 0:
         await db.products.insert_many([dict(p) for p in SEED_PRODUCTS])
         logger.info(f"Seeded {len(SEED_PRODUCTS)} products")

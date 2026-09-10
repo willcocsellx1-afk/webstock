@@ -5,8 +5,9 @@ import {
   ShieldCheck, Plus, Pencil, Trash2, RotateCcw, LogOut, X, Loader2, Package, Receipt, ArrowLeft, Upload, MessageSquareQuote,
 } from "lucide-react";
 import { toast } from "sonner";
-import { api, formatIDR, imgSrc } from "@/lib/api";
+import { api, formatIDR, imgSrc, formatApiError } from "@/lib/api";
 import { AdminTestimonials } from "@/components/AdminTestimonials";
+import { useAuth } from "@/context/AuthContext";
 
 const CATEGORIES = ["Akun Game", "Jasa Joki", "Topup Game"];
 const BADGE_PRESETS = ["Verified Seller", "Garansi 100%", "Diskon Hot"];
@@ -19,10 +20,11 @@ const EMPTY_FORM = {
 };
 
 export default function Admin() {
-  const [key, setKey] = useState(localStorage.getItem("nx_admin_key") || "");
-  const [authed, setAuthed] = useState(false);
+  const { user, login, logout: authLogout, initializing } = useAuth();
+  const authed = !!user && user.role === "admin";
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPass, setLoginPass] = useState("");
   const [checking, setChecking] = useState(false);
-  const [keyInput, setKeyInput] = useState("");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -33,13 +35,13 @@ export default function Admin() {
   const [uploading, setUploading] = useState(false);
   const [badgeInput, setBadgeInput] = useState("");
 
-  const headers = { "x-admin-key": key };
+  const headers = {};
 
   const load = useCallback(async () => {
     try {
       const [p, o, t] = await Promise.all([
         api.get("/products"),
-        api.get("/admin/orders", { headers }),
+        api.get("/admin/orders"),
         api.get("/testimonials"),
       ]);
       setProducts(p.data);
@@ -48,38 +50,29 @@ export default function Admin() {
     } catch {
       toast.error("Gagal memuat data admin");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
-
-  const verify = useCallback(async (k) => {
-    setChecking(true);
-    try {
-      await api.get("/admin/verify", { headers: { "x-admin-key": k } });
-      localStorage.setItem("nx_admin_key", k);
-      setKey(k);
-      setAuthed(true);
-    } catch {
-      localStorage.removeItem("nx_admin_key");
-      if (k) toast.error("Kunci admin salah");
-    } finally {
-      setChecking(false);
-    }
   }, []);
-
-  useEffect(() => {
-    if (key) verify(key);
-  }, [key, verify]);
 
   useEffect(() => {
     if (authed) load();
   }, [authed, load]);
 
-  const logout = () => {
-    localStorage.removeItem("nx_admin_key");
-    setKey("");
-    setAuthed(false);
-    setKeyInput("");
+  const doLogin = async () => {
+    if (!loginEmail || !loginPass) {
+      toast.error("Email & password wajib diisi");
+      return;
+    }
+    setChecking(true);
+    try {
+      const u = await login(loginEmail, loginPass);
+      if (u.role !== "admin") toast.error("Akun ini bukan admin");
+    } catch (e) {
+      toast.error(formatApiError(e.response?.data?.detail) || "Login gagal");
+    } finally {
+      setChecking(false);
+    }
   };
+
+  const logout = () => authLogout();
 
   const openNew = () => {
     setForm(EMPTY_FORM);
@@ -201,6 +194,14 @@ export default function Admin() {
     }
   };
 
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-void grid-bg flex items-center justify-center" data-testid="admin-loading">
+        <Loader2 size={28} className="animate-spin text-neon" />
+      </div>
+    );
+  }
+
   if (!authed) {
     return (
       <div data-testid="admin-login-page" className="min-h-screen bg-void grid-bg flex items-center justify-center px-4">
@@ -214,25 +215,46 @@ export default function Admin() {
             <ShieldCheck size={20} />
           </span>
           <h1 className="font-display font-bold uppercase text-lg" data-testid="admin-login-title">Panel Admin</h1>
-          <p className="text-xs text-slate-500 font-mono mt-2 mb-6">Masukkan kunci admin untuk mengelola katalog.</p>
-          <input
-            type="password"
-            value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && verify(keyInput)}
-            placeholder="Kunci admin"
-            data-testid="admin-key-input"
-            className="w-full bg-void border border-line focus:border-neon/60 outline-none text-sm font-mono px-4 py-3 placeholder:text-slate-600 transition-colors"
-          />
-          <button
-            onClick={() => verify(keyInput)}
-            disabled={checking}
-            data-testid="admin-login-button"
-            className="mt-3 w-full flex items-center justify-center gap-2 bg-neon text-void font-display font-bold text-xs uppercase tracking-[0.2em] py-3.5 hover:bg-lime transition-colors duration-300 disabled:opacity-50"
-          >
-            {checking && <Loader2 size={14} className="animate-spin" />}
-            Masuk
-          </button>
+          {user && user.role !== "admin" ? (
+            <>
+              <p className="text-xs text-coral font-mono mt-2 mb-6" data-testid="admin-not-authorized">
+                Akun "{user.email}" bukan admin. Silakan keluar dan masuk dengan akun admin.
+              </p>
+              <button onClick={logout} data-testid="admin-switch-account" className="w-full bg-neon text-void font-display font-bold text-xs uppercase tracking-[0.2em] py-3.5 hover:bg-lime transition-colors">
+                Keluar
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500 font-mono mt-2 mb-6">Masuk dengan email &amp; password admin.</p>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                placeholder="Email admin"
+                data-testid="admin-email-input"
+                className="w-full bg-void border border-line focus:border-neon/60 outline-none text-sm font-mono px-4 py-3 placeholder:text-slate-600 transition-colors"
+              />
+              <input
+                type="password"
+                value={loginPass}
+                onChange={(e) => setLoginPass(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && doLogin()}
+                placeholder="Password"
+                data-testid="admin-password-input"
+                className="mt-3 w-full bg-void border border-line focus:border-neon/60 outline-none text-sm font-mono px-4 py-3 placeholder:text-slate-600 transition-colors"
+              />
+              <button
+                onClick={doLogin}
+                disabled={checking}
+                data-testid="admin-login-button"
+                className="mt-3 w-full flex items-center justify-center gap-2 bg-neon text-void font-display font-bold text-xs uppercase tracking-[0.2em] py-3.5 hover:bg-lime transition-colors duration-300 disabled:opacity-50"
+              >
+                {checking && <Loader2 size={14} className="animate-spin" />}
+                Masuk
+              </button>
+            </>
+          )}
           <Link to="/" data-testid="admin-back-home-link" className="mt-4 flex items-center justify-center gap-1.5 text-[11px] font-mono text-slate-500 hover:text-neon transition-colors">
             <ArrowLeft size={12} /> Kembali ke beranda
           </Link>

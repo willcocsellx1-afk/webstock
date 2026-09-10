@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, PackageSearch, Images } from "lucide-react";
+import { Search, PackageSearch, Images, Heart } from "lucide-react";
 import { formatIDR, imgSrc } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 const badgeCls = (b) =>
   b === "Diskon Hot" ? "bg-coral text-white" : b === "Garansi 100%" ? "bg-lime text-void" : "bg-neon text-void";
@@ -22,6 +23,7 @@ const SORTS = [
 ];
 
 export const Catalog = ({ products, loading, onSelect }) => {
+  const { isWishlisted, toggleWishlist } = useAuth();
   const [game, setGame] = useState("Semua Game");
   const [category, setCategory] = useState("Semua Kategori");
   const [sort, setSort] = useState("populer");
@@ -141,7 +143,7 @@ export const Catalog = ({ products, loading, onSelect }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" data-testid="catalog-grid">
             {filtered.map((p, i) => (
-              <motion.button
+              <motion.div
                 key={p.id}
                 initial={{ opacity: 0, y: 28 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -150,7 +152,7 @@ export const Catalog = ({ products, loading, onSelect }) => {
                 whileHover={{ y: -6 }}
                 onClick={() => onSelect(p)}
                 data-testid={`product-card-${p.id}`}
-                className="group text-left bg-panel border border-line hover:border-neon/50 hover:glow-cyan transition-colors duration-300"
+                className="group cursor-pointer text-left bg-panel border border-line hover:border-neon/50 hover:glow-cyan transition-colors duration-300"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <img
@@ -175,11 +177,21 @@ export const Catalog = ({ products, loading, onSelect }) => {
                       </div>
                     ) : null;
                   })()}
-                  {p.stock < 1 && (
-                    <span data-testid={`stock-out-${p.id}`} className="absolute top-3 right-3 text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-coral text-white">
-                      Habis
-                    </span>
-                  )}
+                  <div className="absolute top-3 right-3 flex flex-col items-end gap-2 z-10">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleWishlist(p.id); }}
+                      data-testid={`wishlist-toggle-${p.id}`}
+                      aria-label="Tambah ke favorit"
+                      className="w-8 h-8 grid place-items-center bg-void/70 backdrop-blur border border-line/60 hover:border-neon transition-colors"
+                    >
+                      <Heart size={14} className={isWishlisted(p.id) ? "text-coral fill-coral" : "text-slate-300"} />
+                    </button>
+                    {p.stock < 1 && (
+                      <span data-testid={`stock-out-${p.id}`} className="text-[9px] font-bold uppercase tracking-widest px-2 py-1 bg-coral text-white">
+                        Habis
+                      </span>
+                    )}
+                  </div>
                   <span className="absolute bottom-3 left-3 text-[10px] font-mono uppercase tracking-widest text-neon">
                     {p.game}
                   </span>
@@ -209,7 +221,7 @@ export const Catalog = ({ products, loading, onSelect }) => {
                     Detail &amp; Beli
                   </span>
                 </div>
-              </motion.button>
+              </motion.div>
             ))}
           </div>
         )}
