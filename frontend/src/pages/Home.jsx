@@ -31,7 +31,7 @@ export default function Home() {
   return (
     <div data-testid="home-page" className="bg-void min-h-screen text-slate-100">
       <Navbar />
-      <Hero featured={featured} />
+      <Hero featured={featured} products={products} />
       <Marquee />
       <Catalog products={products} loading={loading} onSelect={setSelected} />
       <HowItWorks />
@@ -40,7 +40,7 @@ export default function Home() {
       <ProductModal product={selected} onClose={() => setSelected(null)} />
 
       <a
-        href={waLink("Halo NEXUSGAME, saya butuh bantuan.")}
+        href={waLink("Halo WillJustPlay, saya butuh bantuan.")}
         target="_blank"
         rel="noopener noreferrer"
         data-testid="floating-whatsapp-button"

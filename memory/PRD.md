@@ -41,6 +41,13 @@
 - Kolom "Metode" (provider · payment_type) di tabel pesanan admin. Copy Stripe → Midtrans & Stripe di footer/how-it-works/modal.
 - Tambah/hapus produk di admin diverifikasi ulang (testing agent, iteration_1 lulus semua).
 
+## Edit Visual (10 Jun 2026 — permintaan user)
+- Rebrand UI: **WillJustPlay** (navbar, footer, admin, pesan WA), teks raksasa footer **WJPGAME**
+- Hero: subtitle baru, metrik dinamis (total terjual & rata-rata rating dari produk), "24/7" → "Responsif", tombol "Chat CS" → "Sosial Media" (FB `https://www.facebook.com/share/1Ey74rNDVi/`)
+- Navbar: ikon logo → link FB `https://www.facebook.com/share/1DNMWVGsG5/`, tombol Live CS dihapus, tombol Admin dipindah jadi ikon kecil tersembunyi di paling bawah footer (`footer-hidden-admin-link`)
+- Kategori "Top Up Diamond" → "Topup Game" (seed + filter + admin)
+- Produk punya hingga 5 gambar tambahan (`images[]`): upload multi-file di admin, galeri thumbnail di modal produk, badge "+N foto" di kartu katalog
+
 ## Kredensial
 - Admin Key: `Musangpandan` (lihat /app/memory/test_credentials.md)
 - Stripe test card: 4242 4242 4242 4242

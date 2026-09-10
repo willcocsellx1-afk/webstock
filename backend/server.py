@@ -91,7 +91,7 @@ IMG = {
 SEED_PRODUCTS = [
     {"id": "ml-sultan-mythic", "game": "Mobile Legends", "category": "Akun Game", "title": "Akun Sultan Mythic Glory — 320 Skin & 120 Hero", "price": 4500000, "rank": "Mythical Glory", "image": IMG["cyber"], "stock": 1, "badge": "Verified Seller", "featured": True, "sold": 214, "rating": 4.9, "created_at": iso(2), "description": "Akun Mobile Legends tier Mythical Glory dengan 320+ skin termasuk Legend, Collector, dan Zodiac lengkap. Win rate 68%, bind email pribadi, semua data diganti setelah pembayaran. Garansi penuh 30 hari."},
     {"id": "ml-joki-mythic", "game": "Mobile Legends", "category": "Jasa Joki", "title": "Jasa Joki Rank ke Mythic — Pro Player Fast Track", "price": 350000, "rank": "Epic → Mythic", "image": IMG["setup"], "stock": 99, "badge": "Garansi 100%", "featured": False, "sold": 891, "rating": 5.0, "created_at": iso(5), "description": "Dijoki langsung oleh pro player top global. Proses 1-3 hari tergantung rank awal. Privasi akun 100% aman, tanpa cheat, tanpa VPN berbahaya. Update progres harian via WhatsApp."},
-    {"id": "ml-topup-1000dm", "game": "Mobile Legends", "category": "Top Up Diamond", "title": "Top Up 1000 Diamond Mobile Legends Instant", "price": 250000, "rank": "Via ID Server", "image": IMG["controller"], "stock": 999, "badge": "", "featured": False, "sold": 2300, "rating": 4.8, "created_at": iso(1), "description": "Top up diamond ML legal 100% via ID & server. Masuk otomatis 1-5 menit setelah pembayaran terkonfirmasi. Bonus diamond event mengikuti ketentuan Moonton."},
+    {"id": "ml-topup-1000dm", "game": "Mobile Legends", "category": "Topup Game", "title": "Top Up 1000 Diamond Mobile Legends Instant", "price": 250000, "rank": "Via ID Server", "image": IMG["controller"], "stock": 999, "badge": "", "featured": False, "sold": 2300, "rating": 4.8, "created_at": iso(1), "description": "Top up diamond ML legal 100% via ID & server. Masuk otomatis 1-5 menit setelah pembayaran terkonfirmasi. Bonus diamond event mengikuti ketentuan Moonton."},
     {"id": "pubg-conqueror", "game": "PUBG Mobile", "category": "Akun Game", "title": "Akun Conqueror S24 — Maxed M416 Glacier", "price": 6800000, "rank": "Conqueror", "image": IMG["arena"], "stock": 1, "badge": "Verified Seller", "featured": False, "sold": 87, "rating": 4.9, "created_at": iso(8), "description": "Akun PUBG Mobile Conqueror season 24 dengan M416 Glacier max level, 15 outfit langka, dan RP lengkap sejak S10. Data lengkap, email ganti, garansi seumur akun."},
     {"id": "pubg-joki-conqueror", "game": "PUBG Mobile", "category": "Jasa Joki", "title": "Jasa Push Rank Conqueror — Squad Pro", "price": 750000, "rank": "Ace → Conqueror", "image": IMG["crowd"], "stock": 50, "badge": "Garansi 100%", "featured": False, "sold": 342, "rating": 4.9, "created_at": iso(4), "description": "Push rank ke Conqueror oleh squad pro berpengalaman turnamen. KD terjaga, statistik rapi, tanpa program ilegal. Estimasi 3-7 hari, laporan progres tiap hari."},
     {"id": "gi-ar58-whale", "game": "Genshin Impact", "category": "Akun Game", "title": "Akun AR58 Whale — 10 Limited 5★ C6 R1", "price": 5500000, "rank": "AR 58", "image": IMG["arcade"], "stock": 1, "badge": "Diskon Hot", "featured": False, "sold": 45, "rating": 5.0, "created_at": iso(3), "description": "Akun Genshin Impact AR58 server Asia. 10 karakter limited 5★ (Raiden, Hu Tao, Ayaka, dll), beberapa C6 dengan signature weapon R1. Abyss 36★ clear. Username bisa diganti, email ikut."},
@@ -99,7 +99,7 @@ SEED_PRODUCTS = [
     {"id": "valo-immortal", "game": "Valorant", "category": "Akun Game", "title": "Akun Immortal 3 — 20 Skin Premium Reaver & Prime", "price": 3200000, "rank": "Immortal 3", "image": IMG["retro"], "stock": 1, "badge": "Verified Seller", "featured": False, "sold": 63, "rating": 4.9, "created_at": iso(9), "description": "Akun Valorant Immortal 3 region AP dengan 20 skin premium termasuk Reaver Operator, Prime Vandal, dan Glitchpop. Full agent unlock, Riot ID bisa diganti, email pertama ikut diserahkan."},
     {"id": "valo-joki-radiant", "game": "Valorant", "category": "Jasa Joki", "title": "Jasa Joki ke Radiant — Ex Pro Scene", "price": 900000, "rank": "Diamond → Radiant", "image": IMG["setup"], "stock": 20, "badge": "Garansi 100%", "featured": False, "sold": 128, "rating": 5.0, "created_at": iso(7), "description": "Dijoki oleh mantan pemain pro scene Valorant. Win rate joki 85%+, bisa request agent spesifik. Proses aman dengan VPN lokasi yang sama, tidak terdeteksi smurf."},
     {"id": "ff-sultan-bundle", "game": "Free Fire", "category": "Akun Game", "title": "Akun Sultan FF — Bundle Rare & Evo Gun Max", "price": 1800000, "rank": "Grandmaster", "image": IMG["ps"], "stock": 1, "badge": "Diskon Hot", "featured": False, "sold": 156, "rating": 4.8, "created_at": iso(11), "description": "Akun Free Fire Grandmaster dengan bundle langka (Criminal, Hip Hop, Sakura), Evo Gun MP40 & AK max, serta 50+ emote rare. Login FB bisa dilepas, data aman."},
-    {"id": "ff-topup-2180", "game": "Free Fire", "category": "Top Up Diamond", "title": "Top Up 2180 Diamond Free Fire Termurah", "price": 285000, "rank": "Via ID Player", "image": IMG["controller"], "stock": 999, "badge": "", "featured": False, "sold": 3100, "rating": 4.9, "created_at": iso(2), "description": "Top up diamond FF resmi via ID player, proses otomatis 1-5 menit. Harga termurah se-Indonesia, aman 100% tanpa risiko banned."},
+    {"id": "ff-topup-2180", "game": "Free Fire", "category": "Topup Game", "title": "Top Up 2180 Diamond Free Fire Termurah", "price": 285000, "rank": "Via ID Player", "image": IMG["controller"], "stock": 999, "badge": "", "featured": False, "sold": 3100, "rating": 4.9, "created_at": iso(2), "description": "Top up diamond FF resmi via ID player, proses otomatis 1-5 menit. Harga termurah se-Indonesia, aman 100% tanpa risiko banned."},
     {"id": "hsr-tl70", "game": "Honkai Star Rail", "category": "Akun Game", "title": "Akun TL70 — Full Eidolon Seele & Jing Yuan", "price": 7200000, "rank": "Trailblaze 70", "image": IMG["cyber"], "stock": 1, "badge": "Verified Seller", "featured": False, "sold": 29, "rating": 5.0, "created_at": iso(1), "description": "Akun Honkai Star Rail TL70 server Asia. Seele E6 & Jing Yuan E6 dengan Light Cone signature, MoC full clear. Akun whale lengkap, email dan data ikut diserahkan."},
 ]
 
@@ -120,6 +120,7 @@ class ProductIn(BaseModel):
     description: str = ""
     rank: str = ""
     image: str = ""
+    images: list[str] = []
     stock: int = 1
     badge: str = ""
     featured: bool = False
@@ -184,6 +185,7 @@ async def admin_verify(admin=Depends(require_admin)):
 @api_router.post("/admin/products")
 async def create_product(data: ProductIn, admin=Depends(require_admin)):
     doc = data.model_dump()
+    doc["images"] = [u for u in doc["images"] if u][:5]
     doc["id"] = str(uuid.uuid4())[:8]
     doc["created_at"] = datetime.now(timezone.utc).isoformat()
     await db.products.insert_one(doc)
@@ -193,7 +195,9 @@ async def create_product(data: ProductIn, admin=Depends(require_admin)):
 
 @api_router.put("/admin/products/{product_id}")
 async def update_product(product_id: str, data: ProductIn, admin=Depends(require_admin)):
-    res = await db.products.update_one({"id": product_id}, {"$set": data.model_dump()})
+    doc = data.model_dump()
+    doc["images"] = [u for u in doc["images"] if u][:5]
+    res = await db.products.update_one({"id": product_id}, {"$set": doc})
     if res.matched_count == 0:
         raise HTTPException(404, "Produk tidak ditemukan")
     return await db.products.find_one({"id": product_id}, {"_id": 0})

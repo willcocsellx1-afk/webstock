@@ -29,7 +29,7 @@ export default function PaymentCancel() {
             <Home size={14} /> Kembali ke Katalog
           </Link>
           <a
-            href={waLink("Halo NEXUSGAME, saya mengalami kendala saat pembayaran.")}
+            href={waLink("Halo WillJustPlay, saya mengalami kendala saat pembayaran.")}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="cancel-cs-button"

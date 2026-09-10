@@ -8,12 +8,12 @@ import { toast } from "sonner";
 import { api, formatIDR, imgSrc } from "@/lib/api";
 import { AdminTestimonials } from "@/components/AdminTestimonials";
 
-const CATEGORIES = ["Akun Game", "Jasa Joki", "Top Up Diamond"];
+const CATEGORIES = ["Akun Game", "Jasa Joki", "Topup Game"];
 const BADGES = ["", "Verified Seller", "Garansi 100%", "Diskon Hot"];
 
 const EMPTY_FORM = {
   game: "", category: "Akun Game", title: "", price: 0, rank: "",
-  image: "", stock: 1, badge: "", description: "", featured: false, sold: 0, rating: 5.0,
+  image: "", images: [], stock: 1, badge: "", description: "", featured: false, sold: 0, rating: 5.0,
 };
 
 export default function Admin() {
@@ -86,7 +86,7 @@ export default function Admin() {
   const openEdit = (p) => {
     setForm({
       game: p.game, category: p.category, title: p.title, price: p.price,
-      rank: p.rank || "", image: p.image || "", stock: p.stock, badge: p.badge || "",
+      rank: p.rank || "", image: p.image || "", images: p.images || [], stock: p.stock, badge: p.badge || "",
       description: p.description || "", featured: !!p.featured, sold: p.sold || 0, rating: p.rating || 5,
     });
     setEditing(p.id);
@@ -145,6 +145,36 @@ export default function Admin() {
     }
   };
 
+  const uploadGallery = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const room = 5 - form.images.length;
+    if (room <= 0) {
+      toast.error("Maksimal 5 gambar tambahan");
+      e.target.value = "";
+      return;
+    }
+    setUploading(true);
+    try {
+      const urls = [];
+      for (const f of files.slice(0, room)) {
+        const fd = new FormData();
+        fd.append("file", f);
+        const { data } = await api.post("/admin/upload", fd, { headers });
+        urls.push(data.url);
+      }
+      setForm((prev) => ({ ...prev, images: [...prev.images, ...urls].slice(0, 5) }));
+      toast.success(`${urls.length} gambar tambahan diupload`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Gagal mengupload gambar");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const removeGalleryImage = (idx) => setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }));
+
   const resetSeed = async () => {
     if (!window.confirm("Reset katalog ke data contoh awal? Semua perubahan akan hilang.")) return;
     try {
@@ -202,7 +232,7 @@ export default function Admin() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="w-8 h-8 grid place-items-center bg-neon text-void"><ShieldCheck size={15} /></span>
-            <span className="font-display font-extrabold text-sm uppercase tracking-tight">Admin <span className="text-neon">NexusGame</span></span>
+            <span className="font-display font-extrabold text-sm uppercase tracking-tight">Admin <span className="text-neon">WillJustPlay</span></span>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/" data-testid="admin-view-store-button" className="text-[11px] uppercase tracking-widest text-slate-400 hover:text-neon border border-line hover:border-neon/50 px-3 py-2 transition-colors">
@@ -405,6 +435,25 @@ export default function Admin() {
                     <input value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="atau tempel URL gambar https://..." data-testid="form-image-input"
                       className="w-full bg-void border border-line focus:border-neon/60 outline-none text-xs font-mono px-3 py-2.5 placeholder:text-slate-600 transition-colors" />
                   </div>
+                </div>
+              </div>
+              <div className="sm:col-span-2">
+                <span className="text-[10px] uppercase tracking-widest text-slate-500">Gambar Tambahan ({form.images.length}/5)</span>
+                <div className="mt-1.5 flex flex-wrap gap-2" data-testid="form-gallery-list">
+                  {form.images.map((url, i) => (
+                    <div key={i} className="relative w-16 h-16 border border-line group" data-testid={`form-gallery-item-${i}`}>
+                      <img src={imgSrc(url)} alt="" className="w-full h-full object-cover" />
+                      <button type="button" onClick={() => removeGalleryImage(i)} data-testid={`form-gallery-remove-${i}`} className="absolute -top-1.5 -right-1.5 w-5 h-5 grid place-items-center bg-coral text-white">
+                        <X size={10} />
+                      </button>
+                    </div>
+                  ))}
+                  {form.images.length < 5 && (
+                    <label data-testid="form-gallery-upload-label" className={`w-16 h-16 grid place-items-center border border-dashed border-line hover:border-neon/60 text-slate-500 hover:text-neon cursor-pointer transition-colors ${uploading ? "opacity-50 pointer-events-none" : ""}`}>
+                      {uploading ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />}
+                      <input type="file" accept="image/*" multiple onChange={uploadGallery} data-testid="form-gallery-file-input" className="hidden" />
+                    </label>
+                  )}
                 </div>
               </div>
               <label className="block">

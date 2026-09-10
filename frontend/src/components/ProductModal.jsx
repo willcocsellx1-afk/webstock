@@ -8,9 +8,12 @@ export const ProductModal = ({ product, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [methods, setMethods] = useState([{ id: "stripe", label: "Kartu (Stripe)" }]);
   const [method, setMethod] = useState("stripe");
+  const [active, setActive] = useState(0);
+  const gallery = product ? [product.image, ...(product.images || [])].filter(Boolean) : [];
 
   useEffect(() => {
     setLoading(false);
+    setActive(0);
     api.get("/payments/methods").then((r) => {
       setMethods(r.data);
       setMethod(r.data[0]?.id || "stripe");
@@ -41,8 +44,22 @@ export const ProductModal = ({ product, onClose }) => {
         {product && (
           <div className="grid md:grid-cols-2">
             <div className="relative aspect-square md:aspect-auto md:min-h-[420px]">
-              <img src={imgSrc(product.image)} alt={product.title} className="absolute inset-0 w-full h-full object-cover" />
-              <div className="absolute inset-0 bg-gradient-to-t from-panel via-transparent to-transparent" />
+              <img src={imgSrc(gallery[active] || product.image)} alt={product.title} data-testid="modal-main-image" className="absolute inset-0 w-full h-full object-cover transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-t from-panel via-transparent to-transparent pointer-events-none" />
+              {gallery.length > 1 && (
+                <div className="absolute bottom-3 inset-x-3 flex gap-1.5 justify-center" data-testid="modal-gallery-thumbs">
+                  {gallery.map((g, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setActive(i)}
+                      data-testid={`modal-thumb-${i}`}
+                      className={`w-12 h-12 overflow-hidden border transition-colors duration-200 ${active === i ? "border-neon" : "border-line/60 opacity-70 hover:opacity-100"}`}
+                    >
+                      <img src={imgSrc(g)} alt="" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
               {product.badge && (
                 <span className={`absolute top-4 left-4 text-[10px] font-bold uppercase tracking-widest px-2.5 py-1.5 ${
                   product.badge === "Diskon Hot" ? "bg-coral text-white" : "bg-neon text-void"
@@ -114,7 +131,7 @@ export const ProductModal = ({ product, onClose }) => {
                   {product.stock < 1 ? "Stok Habis" : loading ? "Memproses..." : "Beli Sekarang"}
                 </button>
                 <a
-                  href={waLink(`Halo NEXUSGAME, saya mau tanya tentang: ${product.title}`)}
+                  href={waLink(`Halo WillJustPlay, saya mau tanya tentang: ${product.title}`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   data-testid="modal-whatsapp-button"

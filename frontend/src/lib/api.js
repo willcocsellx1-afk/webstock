@@ -12,6 +12,8 @@ export const formatIDR = (n) =>
   }).format(n || 0);
 
 export const WA_NUMBER = "6285693161480";
+export const FB_URL = "https://www.facebook.com/share/1Ey74rNDVi/";
+export const FB_LOGO_URL = "https://www.facebook.com/share/1DNMWVGsG5/";
 
 export const waLink = (text) =>
   `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`;

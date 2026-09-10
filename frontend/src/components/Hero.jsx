@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
-import { ArrowDown, MessageCircle, ShieldCheck, Timer, BadgeCheck } from "lucide-react";
-import { formatIDR, waLink, imgSrc } from "@/lib/api";
+import { ArrowDown, Facebook, ShieldCheck, Timer, BadgeCheck } from "lucide-react";
+import { formatIDR, imgSrc, FB_URL } from "@/lib/api";
 
 const LINES = [
   { text: "BELI AKUN GAME", cls: "text-slate-100" },
@@ -11,7 +11,11 @@ const LINES = [
 
 const EASE = [0.16, 1, 0.3, 1];
 
-export const Hero = ({ featured }) => {
+const compact = (n) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10000 ? 0 : 1).replace(/\.0$/, "")}K+` : `${n}`);
+
+export const Hero = ({ featured, products = [] }) => {
+  const totalSold = products.reduce((s, p) => s + (p.sold || 0), 0);
+  const avgRating = products.length ? (products.reduce((s, p) => s + (p.rating || 0), 0) / products.length).toFixed(1) : "5.0";
   const ref = useRef(null);
   const mx = useMotionValue(0.5);
   const my = useMotionValue(0.5);
@@ -72,9 +76,8 @@ export const Hero = ({ featured }) => {
             className="mt-7 max-w-xl text-sm sm:text-base leading-relaxed text-slate-400"
             data-testid="hero-subtitle"
           >
-            Marketplace game terpercaya. Dapatkan akun Sultan Mobile Legends, PUBG,
-            Genshin Impact &amp; jasa joki rank fast-track dari pro player. Proses
-            otomatis 5-15 menit, garansi penuh.
+            Store game terpercaya, dapatkan akun game berkualitas dan joki dengan
+            harga terjangkau, proses cepat dan tanpa ribet juga bergaransi.
           </motion.p>
 
           <motion.div
@@ -92,14 +95,14 @@ export const Hero = ({ featured }) => {
               <ArrowDown size={15} className="transition-transform duration-300 group-hover:translate-y-1" />
             </a>
             <a
-              href={waLink("Halo NEXUSGAME, saya mau tanya produk.")}
+              href={FB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              data-testid="hero-cta-whatsapp"
+              data-testid="hero-cta-social"
               className="inline-flex items-center gap-3 border border-line hover:border-neon/60 text-slate-300 hover:text-neon font-display font-bold text-xs uppercase tracking-[0.2em] px-7 py-4 transition-colors duration-300"
             >
-              <MessageCircle size={15} />
-              Chat CS
+              <Facebook size={15} />
+              Sosial Media
             </a>
           </motion.div>
 
@@ -111,12 +114,12 @@ export const Hero = ({ featured }) => {
             data-testid="hero-metrics"
           >
             {[
-              { v: "6.5K+", l: "Produk Terjual" },
-              { v: "4.9/5", l: "Rating Pembeli" },
-              { v: "24/7", l: "CS Online" },
+              { v: compact(totalSold), l: "Produk Terjual", t: "hero-metric-sold" },
+              { v: `${avgRating}/5`, l: "Rating Pembeli", t: "hero-metric-rating" },
+              { v: "Responsif", l: "CS Online", t: "hero-metric-cs" },
             ].map((s) => (
               <div key={s.l} className="px-4 py-4">
-                <p className="font-display font-bold text-lg sm:text-xl text-neon">{s.v}</p>
+                <p className="font-display font-bold text-lg sm:text-xl text-neon" data-testid={s.t}>{s.v}</p>
                 <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">{s.l}</p>
               </div>
             ))}

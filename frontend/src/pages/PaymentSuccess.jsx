@@ -96,7 +96,7 @@ export default function PaymentSuccess() {
             <Home size={14} /> Kembali ke Beranda
           </Link>
           <a
-            href={waLink(`Halo NEXUSGAME, saya mau tanya pesanan dengan sesi: ${sessionId || "-"}`)}
+            href={waLink(`Halo WillJustPlay, saya mau tanya pesanan dengan sesi: ${sessionId || "-"}`)}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="payment-cs-button"

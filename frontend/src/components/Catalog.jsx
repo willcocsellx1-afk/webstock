@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, PackageSearch } from "lucide-react";
+import { Search, PackageSearch, Images } from "lucide-react";
 import { formatIDR, imgSrc } from "@/lib/api";
 
-const CATEGORIES = ["Semua Kategori", "Akun Game", "Jasa Joki", "Top Up Diamond"];
+const CATEGORIES = ["Semua Kategori", "Akun Game", "Jasa Joki", "Topup Game"];
 const SORTS = [
   { v: "populer", l: "Paling Populer" },
   { v: "termurah", l: "Termurah" },
@@ -150,6 +150,11 @@ export const Catalog = ({ products, loading, onSelect }) => {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-void via-void/10 to-transparent" />
+                  {p.images?.length > 0 && (
+                    <span data-testid={`gallery-count-${p.id}`} className="absolute bottom-3 right-3 flex items-center gap-1 bg-void/80 backdrop-blur text-[9px] font-mono uppercase tracking-widest text-slate-300 px-2 py-1">
+                      <Images size={10} /> +{p.images.length} foto
+                    </span>
+                  )}
                   {p.badge && (
                     <span className={`absolute top-3 left-3 text-[9px] font-bold uppercase tracking-widest px-2 py-1 ${
                       p.badge === "Diskon Hot" ? "bg-coral text-white" : "bg-neon text-void"

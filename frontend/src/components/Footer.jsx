@@ -1,4 +1,5 @@
 import { Zap, MessageCircle, ShieldCheck, CreditCard, Clock } from "lucide-react";
+import { Link } from "react-router-dom";
 import { waLink } from "@/lib/api";
 
 export const Footer = () => (
@@ -11,7 +12,7 @@ export const Footer = () => (
               <Zap size={17} strokeWidth={2.75} />
             </span>
             <span className="font-display font-extrabold text-sm tracking-tight uppercase">
-              Nexus<span className="text-neon">Game</span>
+              Will<span className="text-neon">Just</span>Play
             </span>
           </div>
           <p className="text-xs leading-relaxed text-slate-400 max-w-sm">
@@ -19,7 +20,7 @@ export const Footer = () => (
             transaksi dilindungi garansi 100% uang kembali.
           </p>
           <a
-            href={waLink("Halo NEXUSGAME!")}
+            href={waLink("Halo WillJustPlay!")}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="footer-whatsapp-button"
@@ -36,7 +37,6 @@ export const Footer = () => (
             <li><a href="#katalog" data-testid="footer-link-catalog" className="hover:text-neon transition-colors">Katalog Produk</a></li>
             <li><a href="#cara-kerja" data-testid="footer-link-howto" className="hover:text-neon transition-colors">Cara Kerja</a></li>
             <li><a href="#testimoni" data-testid="footer-link-testimonials" className="hover:text-neon transition-colors">Testimoni</a></li>
-            <li><a href="/admin" data-testid="footer-link-admin" className="hover:text-neon transition-colors">Panel Admin</a></li>
           </ul>
         </div>
 
@@ -51,16 +51,26 @@ export const Footer = () => (
       </div>
 
       <p className="font-display font-black uppercase text-center leading-none text-[16vw] md:text-[11vw] text-stroke opacity-30 select-none" aria-hidden="true">
-        NexusGame
+        WJPGAME
       </p>
 
       <div className="border-t border-line mt-6 pt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
-          &copy; 2026 NexusGame ID &mdash; Marketplace Game Indonesia
+          &copy; 2026 WillJustPlay &mdash; Store Game Indonesia
         </p>
         <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
           Akun &bull; Joki &bull; Top Up
         </p>
+      </div>
+      <div className="flex justify-end pt-3">
+        <Link
+          to="/admin"
+          data-testid="footer-hidden-admin-link"
+          aria-label="Admin"
+          className="text-slate-800 hover:text-neon/70 transition-colors duration-300 opacity-40 hover:opacity-100 p-1"
+        >
+          <ShieldCheck size={11} />
+        </Link>
       </div>
     </div>
   </footer>
